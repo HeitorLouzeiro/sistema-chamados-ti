@@ -13,8 +13,75 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { DataTable } from "@/components/data-table"
+import { columns, type Chamado } from "@/components/columns"
+import { StatsCard } from "@/components/stats-card"
+import { Ticket, Clock, CheckCircle } from "lucide-react"
 
 export default function Page() {
+  const data: Chamado[] = [
+    {
+      id: "00003",
+      titulo: "Rede lenta",
+      servico: "Instalação de Rede",
+      valorTotal: "R$ 180,00",
+      tecnico: {
+        nome: "Carlos Silva",
+        iniciais: "CS"
+      },
+      status: "aberto",
+      atualizadoEm: "13/04/25 20:56"
+    },
+    {
+      id: "00004",
+      titulo: "Backup não está funcionando",
+      servico: "Recuperação de Dados",
+      valorTotal: "R$ 200,00",
+      tecnico: {
+        nome: "Carlos Silva",
+        iniciais: "CS"
+      },
+      status: "aberto",
+      atualizadoEm: "12/04/25 15:20"
+    },
+    {
+      id: "00001",
+      titulo: "Computador não liga",
+      servico: "Manutenção de Hardware",
+      valorTotal: "R$ 150,00",
+      tecnico: {
+        nome: "Carlos Silva",
+        iniciais: "CS"
+      },
+      status: "em-atendimento",
+      atualizadoEm: "12/04/25 09:01"
+    },
+    {
+      id: "00002",
+      titulo: "Instalação de software de gestão",
+      servico: "Suporte de Software",
+      valorTotal: "R$ 200,00",
+      tecnico: {
+        nome: "Ana Oliveira",
+        iniciais: "AO"
+      },
+      status: "encerrado",
+      atualizadoEm: "10/04/25 10:15"
+    },
+    {
+      id: "00005",
+      titulo: "Meu fone não conecta no computador",
+      servico: "Suporte de Software",
+      valorTotal: "R$ 80,00",
+      tecnico: {
+        nome: "Ana Oliveira",
+        iniciais: "AO"
+      },
+      status: "encerrado",
+      atualizadoEm: "11/04/25 15:16"
+    }
+  ]
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -43,11 +110,29 @@ export default function Page() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
+            <StatsCard
+              title="Total de Chamados"
+              value={data.length}
+              description="Todos os chamados registrados"
+              icon={<Ticket className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatsCard
+              title="Em Atendimento"
+              value={data.filter(c => c.status === "em-atendimento").length}
+              description="Chamados sendo processados"
+              icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+            />
+            <StatsCard
+              title="Encerrados"
+              value={data.filter(c => c.status === "encerrado").length}
+              description="Chamados finalizados"
+              icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+            />
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+          <div className="bg-white rounded-xl border p-6">
+            <h2 className="text-lg font-semibold mb-4">Meus Chamados</h2>
+            <DataTable columns={columns} data={data} />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
