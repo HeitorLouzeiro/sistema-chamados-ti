@@ -129,7 +129,7 @@ export default function Page() {
               icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
-          <div className="bg-white rounded-xl border p-6">
+          <div className="bg-white rounded-xl border p-4 md:p-6">
             <h2 className="text-lg font-semibold mb-4">Meus Chamados</h2>
             <DataTable columns={columns} data={data} />
           </div>
