@@ -392,7 +392,10 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
 
       {/* Ações */}
       <div className="flex gap-3 justify-end">
-        <Button variant="outline">
+        <Button 
+          variant="outline"
+          onClick={() => router.push(`/editar-chamado/${chamado.id}`)}
+        >
           Editar Chamado
         </Button>
         {chamado.status !== "encerrado" && (
