@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .auth_views import login_view, logout_view
+from .auth_views import login_view, logout_view, refresh_token_view
 
 app_name = 'usuarios'
 
@@ -8,6 +8,7 @@ urlpatterns = [
     # Autenticação
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
+    path('token/refresh/', refresh_token_view, name='token-refresh'),
     
     # Usuários
     path('', views.UsuarioListCreateView.as_view(), name='usuario-list-create'),

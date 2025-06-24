@@ -14,51 +14,72 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
-import { X, Upload, Image as ImageIcon } from "lucide-react"
+import { X, Upload, Image as ImageIcon, AlertCircle } from "lucide-react"
+import { chamadoService, tipoServicoService, TipoServico } from "@/lib/api"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface ChamadoFormData {
   titulo: string
   descricao: string
-  servico: string
+  tipo_servico: number | null
+  prioridade: string
   equipamento: string
   localizacao: string
-  imagens: File[]
+  anexos: File[]
 }
-
-const servicos = [
-  "Instalação de Rede",
-  "Manutenção de Hardware", 
-  "Suporte de Software",
-  "Recuperação de Dados",
-  "Configuração de Sistema",
-  "Backup e Restore",
-  "Instalação de Impressora",
-  "Suporte Remoto"
-]
 
 export function ChamadoForm() {
   const router = useRouter()
+  const { usuario } = useAuth()
   const [mounted, setMounted] = useState(false)
+  const [tiposServico, setTiposServico] = useState<TipoServico[]>([])
   const [formData, setFormData] = useState<ChamadoFormData>({
     titulo: "",
     descricao: "",
-    servico: "",
+    tipo_servico: null,
+    prioridade: "media",
     equipamento: "",
     localizacao: "",
-    imagens: []
+    anexos: []
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoadingServicos, setIsLoadingServicos] = useState(true)
 
   useEffect(() => {
     setMounted(true)
+    loadTiposServico()
   }, [])
+
+  const loadTiposServico = async () => {
+    try {
+      setIsLoadingServicos(true)
+      const response = await tipoServicoService.listar()
+      
+      // Se a resposta for um objeto com results, pegar o array
+      const tipos = Array.isArray(response) ? response : (response as any)?.results || []
+      setTiposServico(tipos)
+    } catch (error) {
+      console.error("Erro ao carregar tipos de serviço:", error)
+      setError("Erro ao carregar tipos de serviço")
+      setTiposServico([]) // Garantir que sempre seja um array
+    } finally {
+      setIsLoadingServicos(false)
+    }
+  }
 
   if (!mounted) {
     return <div>Carregando...</div>
   }
 
-  const handleInputChange = (field: keyof ChamadoFormData, value: string) => {
+  if (!usuario) {
+    router.push('/login')
+    return null
+  }
+
+  const handleInputChange = (field: keyof ChamadoFormData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -71,7 +92,7 @@ export function ChamadoForm() {
       const newFiles = Array.from(files)
       setFormData(prev => ({
         ...prev,
-        imagens: [...prev.imagens, ...newFiles]
+        anexos: [...prev.anexos, ...newFiles]
       }))
     }
   }
@@ -79,188 +100,244 @@ export function ChamadoForm() {
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      imagens: prev.imagens.filter((_, i) => i !== index)
+      anexos: prev.anexos.filter((_, i) => i !== index)
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError(null)
 
     try {
-      // Simular envio do formulário
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Aqui você faria a chamada para a API
-      console.log("Dados do chamado:", formData)
+      // Validar campos obrigatórios
+      if (!formData.titulo || !formData.descricao || !formData.tipo_servico) {
+        throw new Error("Por favor, preencha todos os campos obrigatórios")
+      }
+
+      // Criar o chamado
+      const novoChamado = await chamadoService.criar({
+        titulo: formData.titulo,
+        descricao: formData.descricao,
+        tipo_servico: formData.tipo_servico,
+        prioridade: formData.prioridade,
+        equipamento: formData.equipamento || undefined,
+        localizacao: formData.localizacao || undefined,
+      })
+
+      // Fazer upload dos anexos se houver
+      if (formData.anexos.length > 0) {
+        for (const anexo of formData.anexos) {
+          try {
+            await chamadoService.uploadAnexo(novoChamado.id, anexo)
+          } catch (error) {
+            console.error("Erro ao fazer upload do anexo:", error)
+            // Não falha a criação do chamado por causa de erro no anexo
+          }
+        }
+      }
       
       // Redirecionar para o dashboard após sucesso
       router.push("/dashboard")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao criar chamado:", error)
+      setError(error.response?.data?.detail || error.message || "Erro ao criar chamado")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const isFormValid = formData.titulo && formData.descricao && formData.servico
+  const isFormValid = formData.titulo && formData.descricao && formData.tipo_servico
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Informações Básicas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Informações Básicas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="titulo">Título do Chamado *</Label>
-              <Input
-                id="titulo"
-                placeholder="Descreva brevemente o problema"
-                value={formData.titulo}
-                onChange={(e) => handleInputChange("titulo", e.target.value)}
-                required
-              />
-            </div>
+    <div>
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-            <div className="space-y-2">
-              <Label htmlFor="servico">Tipo de Serviço *</Label>
-              <Select
-                value={formData.servico}
-                onValueChange={(value) => handleInputChange("servico", value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de serviço" />
-                </SelectTrigger>
-                <SelectContent>
-                  {servicos.map((servico) => (
-                    <SelectItem key={servico} value={servico}>
-                      {servico}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Informações Básicas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Informações Básicas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="titulo">Título do Chamado *</Label>
+                <Input
+                  id="titulo"
+                  placeholder="Descreva brevemente o problema"
+                  value={formData.titulo}
+                  onChange={(e) => handleInputChange("titulo", e.target.value)}
+                  required
+                />
+              </div>
 
-        {/* Detalhes Técnicos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Detalhes Técnicos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="equipamento">Equipamento</Label>
-              <Input
-                id="equipamento"
-                placeholder="Ex: Computador, Impressora, Roteador"
-                value={formData.equipamento}
-                onChange={(e) => handleInputChange("equipamento", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="localizacao">Localização</Label>
-              <Input
-                id="localizacao"
-                placeholder="Ex: Sala 101, Departamento X"
-                value={formData.localizacao}
-                onChange={(e) => handleInputChange("localizacao", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="imagens">Imagens do Problema</Label>
-              <Input
-                id="imagens"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                className="cursor-pointer"
-              />
-              <p className="text-xs text-muted-foreground">
-                Você pode selecionar múltiplas imagens
-              </p>
-              
-              {/* Lista de imagens selecionadas */}
-              {formData.imagens.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  <Label>Imagens Selecionadas ({formData.imagens.length})</Label>
-                  <div className="space-y-2">
-                    {formData.imagens.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-md">
-                            <ImageIcon className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{file.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {(file.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeImage(index)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+              <div className="space-y-2">
+                <Label htmlFor="tipo_servico">Tipo de Serviço *</Label>
+                <Select
+                  value={formData.tipo_servico?.toString() || ""}
+                  onValueChange={(value) => handleInputChange("tipo_servico", parseInt(value))}
+                  required
+                  disabled={isLoadingServicos}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingServicos ? "Carregando..." : "Selecione o tipo de serviço"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.isArray(tiposServico) && tiposServico.map((tipo) => (
+                      <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                        {tipo.nome}
+                      </SelectItem>
                     ))}
+                    {(!Array.isArray(tiposServico) || tiposServico.length === 0) && !isLoadingServicos && (
+                      <SelectItem value="" disabled>
+                        Nenhum tipo de serviço disponível
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="prioridade">Prioridade</Label>
+                <Select
+                  value={formData.prioridade}
+                  onValueChange={(value) => handleInputChange("prioridade", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="baixa">Baixa</SelectItem>
+                    <SelectItem value="media">Média</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="urgente">Urgente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Detalhes Técnicos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Detalhes Técnicos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="equipamento">Equipamento</Label>
+                <Input
+                  id="equipamento"
+                  placeholder="Ex: Computador, Impressora, Roteador"
+                  value={formData.equipamento}
+                  onChange={(e) => handleInputChange("equipamento", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="localizacao">Localização</Label>
+                <Input
+                  id="localizacao"
+                  placeholder="Ex: Sala 101, Departamento X"
+                  value={formData.localizacao}
+                  onChange={(e) => handleInputChange("localizacao", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="anexos">Anexos do Problema</Label>
+                <Input
+                  id="anexos"
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                  multiple
+                  onChange={handleImageChange}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Você pode selecionar múltiplos arquivos (imagens, PDFs, documentos)
+                </p>
+                
+                {/* Lista de anexos selecionados */}
+                {formData.anexos.length > 0 && (
+                  <div className="space-y-2 mt-3">
+                    <Label>Anexos Selecionados ({formData.anexos.length})</Label>
+                    <div className="space-y-2">
+                      {formData.anexos.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-md">
+                              <ImageIcon className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{file.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeImage(index)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Descrição */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Descrição do Problema</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="descricao">Descrição Detalhada *</Label>
+              <Textarea
+                id="descricao"
+                placeholder="Descreva o problema com o máximo de detalhes possível..."
+                value={formData.descricao}
+                onChange={(e) => handleInputChange("descricao", e.target.value)}
+                rows={4}
+                required
+              />
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Descrição */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Descrição do Problema</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição Detalhada *</Label>
-            <Textarea
-              id="descricao"
-              placeholder="Descreva o problema com o máximo de detalhes possível..."
-              value={formData.descricao}
-              onChange={(e) => handleInputChange("descricao", e.target.value)}
-              rows={4}
-              required
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Botões de Ação */}
-      <div className="flex gap-3 justify-end">
-        <Button 
-          type="button" 
-          variant="outline"
-          onClick={() => router.push("/dashboard")}
-          disabled={isSubmitting}
-        >
-          Cancelar
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={!isFormValid || isSubmitting}
-        >
-          {isSubmitting ? "Criando..." : "Criar Chamado"}
-        </Button>
-      </div>
-    </form>
+        {/* Botões de Ação */}
+        <div className="flex gap-3 justify-end">
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => router.push("/dashboard")}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={!isFormValid || isSubmitting}
+          >
+            {isSubmitting ? "Criando..." : "Criar Chamado"}
+          </Button>
+        </div>
+      </form>
+    </div>
   )
 }

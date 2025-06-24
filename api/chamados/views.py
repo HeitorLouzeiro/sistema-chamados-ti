@@ -19,7 +19,8 @@ class TipoServicoListView(generics.ListAPIView):
     
     queryset = TipoServico.objects.filter(ativo=True)
     serializer_class = TipoServicoSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]  # Permitir acesso sem autenticação
+    pagination_class = None  # Desabilitar paginação para tipos de serviço
     ordering = ['nome']
 
 

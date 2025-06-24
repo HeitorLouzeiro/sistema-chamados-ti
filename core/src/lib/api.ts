@@ -13,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('access_token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -28,13 +28,42 @@ api.interceptors.request.use(
 // Interceptor para tratar respostas e erros
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expirado ou inválido
+  async (error) => {
+    const originalRequest = error.config
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+      
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        window.location.href = '/login'
+        const refreshToken = localStorage.getItem('refresh_token')
+        
+        if (refreshToken) {
+          try {
+            // Tentar renovar o token
+            const response = await api.post('/api/usuarios/token/refresh/', {
+              refresh: refreshToken
+            })
+            
+            const newAccessToken = response.data.access
+            localStorage.setItem('access_token', newAccessToken)
+            
+            // Retry da requisição original
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+            return api(originalRequest)
+          } catch (refreshError) {
+            // Se falhar, limpar dados e redirecionar
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+            localStorage.removeItem('user')
+            window.location.href = '/login'
+          }
+        } else {
+          // Sem refresh token, limpar tudo
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('user')
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)
@@ -139,15 +168,49 @@ export interface EstatisticasDashboard {
 export const authService = {
   async login(username: string, password: string) {
     const response = await api.post('/api/usuarios/login/', { username, password })
+    
+    // Armazenar tokens JWT
+    if (response.data.access && response.data.refresh) {
+      localStorage.setItem('access_token', response.data.access)
+      localStorage.setItem('refresh_token', response.data.refresh)
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+      }
+    }
+    
     return response.data
   },
 
   async logout() {
-    await api.post('/api/usuarios/logout/')
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token')
+    try {
+      // Com JWT stateless, chamada opcional para logs no servidor
+      await api.post('/api/usuarios/logout/')
+    } catch (error) {
+      // Mesmo se falhar no servidor, não é problema crítico
+      console.error('Erro no logout:', error)
+    } finally {
+      // Sempre limpar dados locais - isso é o que realmente "faz" o logout
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
     }
+  },
+
+  async refreshToken() {
+    const refreshToken = localStorage.getItem('refresh_token')
+    if (!refreshToken) {
+      throw new Error('Refresh token não encontrado')
+    }
+    
+    const response = await api.post('/api/usuarios/token/refresh/', {
+      refresh: refreshToken
+    })
+    
+    if (response.data.access) {
+      localStorage.setItem('access_token', response.data.access)
+    }
+    
+    return response.data
   },
 
   async getPerfil(): Promise<Usuario> {

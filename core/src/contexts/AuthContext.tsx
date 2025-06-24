@@ -32,18 +32,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Verificar se existe dados do usuário no localStorage
       const usuarioSalvo = localStorage.getItem('user')
-      if (usuarioSalvo) {
+      const accessToken = localStorage.getItem('access_token')
+      
+      if (usuarioSalvo && accessToken) {
         setUsuario(JSON.parse(usuarioSalvo))
       }
 
-      // Tentar buscar perfil atualizado da API
-      const perfilAtualizado = await authService.getPerfil()
-      setUsuario(perfilAtualizado)
-      localStorage.setItem('user', JSON.stringify(perfilAtualizado))
+      // Tentar buscar perfil atualizado da API se houver token
+      if (accessToken) {
+        try {
+          const perfilAtualizado = await authService.getPerfil()
+          setUsuario(perfilAtualizado)
+          localStorage.setItem('user', JSON.stringify(perfilAtualizado))
+        } catch (error) {
+          // Se falhar, pode ser token expirado - tentar renovar
+          try {
+            await authService.refreshToken()
+            const perfilAtualizado = await authService.getPerfil()
+            setUsuario(perfilAtualizado)
+            localStorage.setItem('user', JSON.stringify(perfilAtualizado))
+          } catch (refreshError) {
+            // Se refresh falhar, limpar dados locais
+            localStorage.removeItem('user')
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+            setUsuario(null)
+          }
+        }
+      }
     } catch (error) {
       // Se falhar, limpar dados locais
       localStorage.removeItem('user')
-      localStorage.removeItem('token')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
       setUsuario(null)
     } finally {
       setLoading(false)
@@ -52,12 +73,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (username: string, password: string) => {
     try {
-      await authService.login(username, password)
-      
-      // Após login bem-sucedido, buscar dados do usuário
-      const perfil = await authService.getPerfil()
-      setUsuario(perfil)
-      localStorage.setItem('user', JSON.stringify(perfil))
+      const response = await authService.login(username, password)
+      setUsuario(response.user)
+      // Os tokens já são salvos automaticamente no authService.login
     } catch (error) {
       throw error
     }
@@ -71,8 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Erro ao fazer logout:', error)
     } finally {
       setUsuario(null)
-      localStorage.removeItem('user')
-      localStorage.removeItem('token')
+      // Os dados locais já são limpos no authService.logout
     }
   }
 
