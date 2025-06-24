@@ -1,7 +1,25 @@
+
+.vscode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+/media
+/staticfiles
+
+.env
+venv/
+
+.vscode/
+
+
+# Node.js dependencies
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+*/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,7 +32,7 @@
 /coverage
 
 # next.js
-/.next/
+*/.next/
 /out/
 
 # production
