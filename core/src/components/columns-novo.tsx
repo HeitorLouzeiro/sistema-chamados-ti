@@ -80,10 +80,11 @@ export const columns: ColumnDef<Chamado>[] = [
     },
   },
   {
-    accessorKey: "tipo_servico_nome",
+    accessorKey: "tipo_servico",
     header: "Serviço",
     cell: ({ row }) => {
-      return <span>{row.getValue("tipo_servico_nome")}</span>
+      const tipoServico = row.original.tipo_servico
+      return <span>{tipoServico.nome}</span>
     },
   },
   {
@@ -143,105 +144,5 @@ export const columns: ColumnDef<Chamado>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => <ActionCell chamado={row.original} />,
-  },
-]
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "aberto":
-      return "Aberto"
-    case "em-atendimento":
-      return "Em atendimento"
-    case "encerrado":
-      return "Encerrado"
-    default:
-      return status
-  }
-}
-
-export const columns: ColumnDef<Chamado>[] = [
-  {
-    accessorKey: "atualizadoEm",
-    header: "Atualizado em",
-    cell: ({ row }) => {
-      return <div className="text-sm text-muted-foreground">{row.getValue("atualizadoEm")}</div>
-    },
-  },
-  {
-    accessorKey: "id",
-    header: "Id",
-    cell: ({ row }) => {
-      return <div className="font-medium">{row.getValue("id")}</div>
-    },
-  },
-  {
-    accessorKey: "titulo",
-    header: "Título",
-    cell: ({ row }) => {
-      return <div className="font-medium">{row.getValue("titulo")}</div>
-    },
-  },
-  {
-    accessorKey: "servico",
-    header: "Serviço",
-    cell: ({ row }) => {
-      return <div>{row.getValue("servico")}</div>
-    },
-  },
-  {
-    accessorKey: "tecnico",
-    header: "Técnico",
-    cell: ({ row }) => {
-      const tecnico = row.getValue("tecnico") as Chamado["tecnico"]
-      return (
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={tecnico.avatar} />
-            <AvatarFallback className="text-xs">{tecnico.iniciais}</AvatarFallback>
-          </Avatar>
-          <span className="text-sm">{tecnico.nome}</span>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      return (
-        <Badge variant={getStatusVariant(status)}>
-          {getStatusLabel(status)}
-        </Badge>
-      )
-    },
-  },
-  {
-    id: "actions",
-    header: "Ações",
-    cell: ({ row }) => {
-      const chamado = row.original
-      
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => window.location.href = `/chamado/${chamado.id}`}>
-              <Eye className="mr-2 h-4 w-4" />
-              Visualizar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => window.location.href = `/editar-chamado/${chamado.id}`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
   },
 ]

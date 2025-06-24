@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { DataTable } from "@/components/data-table"
-import { columns } from "@/components/columns-api"
+import { columns } from "@/components/columns"
 import { StatsCard } from "@/components/stats-card"
 import { Ticket, Clock, CheckCircle, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -67,28 +67,26 @@ export default function DashboardPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
+            <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="#">
-                    Dashboard
+                    Sistema de Chamados
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Meus Chamados</BreadcrumbPage>
+                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
+        
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="flex items-center justify-between">
             <div>
@@ -176,17 +174,9 @@ export default function DashboardPage() {
           {/* Tabela de chamados recentes */}
           <div className="rounded-xl border bg-card text-card-foreground shadow">
             <div className="flex flex-col space-y-1.5 p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                  Chamados Recentes
-                </h3>
-                <Button asChild size="sm">
-                  <Link href="/cadastrar-chamado">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Chamado
-                  </Link>
-                </Button>
-              </div>
+              <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                Chamados Recentes
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Últimos chamados cadastrados no sistema
               </p>
