@@ -22,6 +22,11 @@ export type Chamado = {
     url: string
     tamanho: string
   }
+  imagens?: {
+    nome: string
+    url: string
+    tamanho: string
+  }[]
 }
 
 const getStatusVariant = (status: string) => {

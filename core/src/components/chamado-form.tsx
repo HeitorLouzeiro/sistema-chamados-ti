@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
+import { X, Upload, Image as ImageIcon } from "lucide-react"
 
 interface ChamadoFormData {
   titulo: string
@@ -21,7 +22,7 @@ interface ChamadoFormData {
   servico: string
   equipamento: string
   localizacao: string
-  imagem: File | null
+  imagens: File[]
 }
 
 const servicos = [
@@ -37,16 +38,25 @@ const servicos = [
 
 export function ChamadoForm() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState<ChamadoFormData>({
     titulo: "",
     descricao: "",
     servico: "",
     equipamento: "",
     localizacao: "",
-    imagem: null
+    imagens: []
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div>Carregando...</div>
+  }
 
   const handleInputChange = (field: keyof ChamadoFormData, value: string) => {
     setFormData(prev => ({
@@ -56,10 +66,20 @@ export function ChamadoForm() {
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
+    const files = e.target.files
+    if (files) {
+      const newFiles = Array.from(files)
+      setFormData(prev => ({
+        ...prev,
+        imagens: [...prev.imagens, ...newFiles]
+      }))
+    }
+  }
+
+  const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      imagem: file
+      imagens: prev.imagens.filter((_, i) => i !== index)
     }))
   }
 
@@ -154,18 +174,50 @@ export function ChamadoForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imagem">Imagem do Problema</Label>
+              <Label htmlFor="imagens">Imagens do Problema</Label>
               <Input
-                id="imagem"
+                id="imagens"
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageChange}
                 className="cursor-pointer"
               />
-              {formData.imagem && (
-                <p className="text-sm text-muted-foreground">
-                  Arquivo selecionado: {formData.imagem.name}
-                </p>
+              <p className="text-xs text-muted-foreground">
+                Você pode selecionar múltiplas imagens
+              </p>
+              
+              {/* Lista de imagens selecionadas */}
+              {formData.imagens.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  <Label>Imagens Selecionadas ({formData.imagens.length})</Label>
+                  <div className="space-y-2">
+                    {formData.imagens.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-md">
+                            <ImageIcon className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeImage(index)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </CardContent>

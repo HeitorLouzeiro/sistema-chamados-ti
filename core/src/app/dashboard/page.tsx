@@ -58,7 +58,19 @@ export default function Page() {
         iniciais: "CS"
       },
       status: "em-atendimento",
-      atualizadoEm: "12/04/25 09:01"
+      atualizadoEm: "12/04/25 09:01",
+      imagens: [
+        {
+          nome: "computador-frontal.jpg",
+          url: "/uploads/chamados/00001/computador-frontal.jpg",
+          tamanho: "2.3 MB"
+        },
+        {
+          nome: "cabo-energia.jpg",
+          url: "/uploads/chamados/00001/cabo-energia.jpg",
+          tamanho: "1.8 MB"
+        }
+      ]
     },
     {
       id: "00002",

@@ -1,3 +1,6 @@
+"use client"
+
+import { Suspense } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -45,7 +48,9 @@ export default function CadastrarChamadoPage() {
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="bg-white rounded-xl border p-4 md:p-6">
             <h1 className="text-xl font-semibold mb-6">Novo Chamado</h1>
-            <ChamadoForm />
+            <Suspense fallback={<div>Carregando formulário...</div>}>
+              <ChamadoForm />
+            </Suspense>
           </div>
         </div>
       </SidebarInset>

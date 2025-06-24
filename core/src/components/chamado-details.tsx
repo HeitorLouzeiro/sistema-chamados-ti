@@ -43,11 +43,23 @@ const mockChamados: Record<string, Chamado & {
     descricao: "O computador da estação de trabalho não está ligando. Já verificamos o cabo de energia e está conectado corretamente. A luz do monitor está acesa, mas a CPU não responde. Precisa de verificação urgente pois está impactando o trabalho da equipe.",
     equipamento: "Computador Desktop",
     localizacao: "Sala 101 - Departamento Administrativo",
-    imagem: {
-      nome: "computador-nao-liga.jpg",
-      url: "/uploads/chamados/00001/computador-nao-liga.jpg",
-      tamanho: "2.3 MB"
-    }
+    imagens: [
+      {
+        nome: "computador-frontal.jpg",
+        url: "/uploads/chamados/00001/computador-frontal.jpg",
+        tamanho: "2.3 MB"
+      },
+      {
+        nome: "cabo-energia.jpg",
+        url: "/uploads/chamados/00001/cabo-energia.jpg",
+        tamanho: "1.8 MB"
+      },
+      {
+        nome: "led-status.jpg",
+        url: "/uploads/chamados/00001/led-status.jpg",
+        tamanho: "1.2 MB"
+      }
+    ]
   },
   "00002": {
     id: "00002",
@@ -151,6 +163,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   const [chamado, setChamado] = useState<typeof mockChamados[string] | null>(null)
   const [loading, setLoading] = useState(true)
   const [imageModalOpen, setImageModalOpen] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
   useEffect(() => {
     // Simular carregamento dos dados
@@ -311,34 +324,68 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
         </CardContent>
       </Card>
 
-      {/* Imagem do Problema */}
-      {chamado.imagem && (
+      {/* Imagens do Problema */}
+      {(chamado.imagem || (chamado.imagens && chamado.imagens.length > 0)) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
-              Imagem do Problema
+              {chamado.imagens && chamado.imagens.length > 1 ? `Imagens do Problema (${chamado.imagens.length})` : "Imagem do Problema"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div 
-              className="flex items-center justify-between p-4 border rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/60 transition-colors"
-              onClick={() => setImageModalOpen(true)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-md">
-                  <ImageIcon className="h-6 w-6 text-blue-600" />
+          <CardContent className="space-y-3">
+            {/* Múltiplas imagens */}
+            {chamado.imagens && chamado.imagens.length > 0 ? (
+              chamado.imagens.map((imagem, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center justify-between p-4 border rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/60 transition-colors"
+                  onClick={() => {
+                    setSelectedImageIndex(index)
+                    setImageModalOpen(true)
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-md">
+                      <ImageIcon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{imagem.nome}</p>
+                      <p className="text-xs text-muted-foreground">{imagem.tamanho}</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Baixar
+                  </Button>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">{chamado.imagem.nome}</p>
-                  <p className="text-xs text-muted-foreground">{chamado.imagem.tamanho}</p>
+              ))
+            ) : (
+              /* Imagem única (compatibilidade) */
+              chamado.imagem && (
+                <div 
+                  className="flex items-center justify-between p-4 border rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/60 transition-colors"
+                  onClick={() => {
+                    setSelectedImageIndex(0)
+                    setImageModalOpen(true)
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-md">
+                      <ImageIcon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{chamado.imagem.nome}</p>
+                      <p className="text-xs text-muted-foreground">{chamado.imagem.tamanho}</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Baixar
+                  </Button>
                 </div>
-              </div>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Baixar
-              </Button>
-            </div>
+              )
+            )}
           </CardContent>
         </Card>
       )}
@@ -356,13 +403,25 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       </div>
 
       {/* Modal de Imagem */}
-      {chamado.imagem && (
+      {(chamado.imagem || (chamado.imagens && chamado.imagens.length > 0)) && (
         <ImageModal
           isOpen={imageModalOpen}
           onClose={() => setImageModalOpen(false)}
-          imageName={chamado.imagem.nome}
-          imageUrl={chamado.imagem.url}
-          imageSize={chamado.imagem.tamanho}
+          imageName={
+            chamado.imagens && chamado.imagens.length > 0 
+              ? chamado.imagens[selectedImageIndex]?.nome || ""
+              : chamado.imagem?.nome || ""
+          }
+          imageUrl={
+            chamado.imagens && chamado.imagens.length > 0
+              ? chamado.imagens[selectedImageIndex]?.url || ""
+              : chamado.imagem?.url || ""
+          }
+          imageSize={
+            chamado.imagens && chamado.imagens.length > 0
+              ? chamado.imagens[selectedImageIndex]?.tamanho || ""
+              : chamado.imagem?.tamanho || ""
+          }
         />
       )}
     </div>
