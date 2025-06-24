@@ -243,28 +243,6 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {chamado.tecnico && (
-              <>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    Técnico Responsável
-                  </label>
-                  <div className="flex items-center gap-3 mt-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="" />
-                      <AvatarFallback className="text-xs">
-                        {chamado.tecnico.iniciais}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{chamado.tecnico.nome}</span>
-                  </div>
-                </div>
-                
-                <Separator />
-              </>
-            )}
-            
             {chamado.equipamento && (
               <>
                 <div>
@@ -342,15 +320,58 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
         </Card>
       )}
 
+      {/* Informações Editáveis */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5" />
+            Informações Editáveis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Status do Chamado</label>
+            <div className="mt-2">
+              <Badge variant={getStatusVariant(chamado.status)} className="cursor-pointer">
+                {getStatusLabel(chamado.status)}
+              </Badge>
+            </div>
+          </div>
+          
+          <Separator />
+          
+          {chamado.tecnico && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Técnico Responsável</label>
+                <div className="flex items-center gap-3 mt-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="text-xs">
+                      {chamado.tecnico.iniciais}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm">{chamado.tecnico.nome}</span>
+                </div>
+              </div>
+              
+              <Separator />
+            </>
+          )}
+          
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Observações do Técnico</label>
+            <div className="mt-2 p-3 border rounded-md bg-muted/30">
+              <p className="text-sm text-muted-foreground">
+                Verificado problema na fonte de alimentação. Substituição necessária.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Ações */}
       <div className="flex flex-wrap gap-3">
-        <Button
-          onClick={() => router.push(`/editar-chamado/${chamado.id}`)}
-          className="gap-2"
-        >
-          <Edit className="h-4 w-4" />
-          Editar Chamado
-        </Button>
         {chamado.status !== "encerrado" && (
           <Button variant="outline">
             Encerrar Chamado
