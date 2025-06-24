@@ -320,8 +320,11 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
               Imagem do Problema
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+          <CardContent>
+            <div 
+              className="flex items-center justify-between p-4 border rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/60 transition-colors"
+              onClick={() => setImageModalOpen(true)}
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-md">
                   <ImageIcon className="h-6 w-6 text-blue-600" />
@@ -335,20 +338,6 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                 <Download className="h-4 w-4" />
                 Baixar
               </Button>
-            </div>
-            
-            {/* Preview da imagem (simulado) */}
-            <div 
-              className="border rounded-lg overflow-hidden bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
-              onClick={() => setImageModalOpen(true)}
-            >
-              <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
-                <div className="text-center space-y-2">
-                  <ImageIcon className="h-12 w-12 text-blue-400 mx-auto" />
-                  <p className="text-sm text-muted-foreground">Clique para ampliar</p>
-                  <p className="text-xs text-muted-foreground">{chamado.imagem.nome}</p>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
