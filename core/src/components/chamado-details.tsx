@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Calendar, User, MapPin, Monitor, FileText, Image as ImageIcon, Download } from "lucide-react"
+import { ArrowLeft, Calendar, User, MapPin, Monitor, FileText, Image as ImageIcon, Download, Edit } from "lucide-react"
 import { type Chamado } from "@/components/columns"
 import { ImageModal } from "@/components/image-modal"
 
@@ -27,6 +27,11 @@ const mockChamados: Record<string, Chamado & {
     url: string;
     tamanho: string;
   };
+  imagens?: Array<{
+    nome: string;
+    url: string;
+    tamanho: string;
+  }>;
 }> = {
   "00001": {
     id: "00001",
@@ -50,107 +55,70 @@ const mockChamados: Record<string, Chamado & {
         tamanho: "2.3 MB"
       },
       {
-        nome: "cabo-energia.jpg",
-        url: "/uploads/chamados/00001/cabo-energia.jpg",
+        nome: "computador-traseira.jpg",
+        url: "/uploads/chamados/00001/computador-traseira.jpg",
         tamanho: "1.8 MB"
-      },
-      {
-        nome: "led-status.jpg",
-        url: "/uploads/chamados/00001/led-status.jpg",
-        tamanho: "1.2 MB"
       }
     ]
   },
   "00002": {
     id: "00002",
-    titulo: "Instalação de software de gestão",
-    servico: "Suporte de Software",
+    titulo: "Impressora com papel atolado",
+    servico: "Suporte Técnico",
     tecnico: {
-      nome: "Ana Oliveira",
-      iniciais: "AO"
+      nome: "Ana Santos",
+      iniciais: "AS"
     },
-    status: "encerrado",
-    atualizadoEm: "10/04/25 10:15",
-    criadoEm: "08/04/25 09:20",
-    atualizadoPor: "Ana Oliveira",
-    descricao: "Solicitação de instalação do software de gestão empresarial na máquina do departamento administrativo. O software precisa ser configurado com as permissões adequadas e integrado com o banco de dados existente.",
-    equipamento: "Notebook Dell",
-    localizacao: "Sala 205 - Departamento Administrativo"
+    status: "aberto",
+    atualizadoEm: "12/04/25 08:30",
+    criadoEm: "12/04/25 08:00",
+    atualizadoPor: "Sistema",
+    descricao: "A impressora HP LaserJet Pro está com papel atolado constantemente. Já tentamos remover o papel conforme as instruções, mas o problema persiste. A impressora é usada por toda a equipe e está causando atrasos no trabalho.",
+    equipamento: "Impressora HP LaserJet Pro",
+    localizacao: "Sala 205 - Departamento de RH",
+    imagem: {
+      nome: "impressora-atolada.jpg",
+      url: "/uploads/chamados/00002/impressora-atolada.jpg",
+      tamanho: "1.5 MB"
+    }
   },
   "00003": {
     id: "00003",
-    titulo: "Rede lenta",
-    servico: "Instalação de Rede",
+    titulo: "Email não está funcionando",
+    servico: "Configuração de Sistema",
     tecnico: {
-      nome: "Carlos Silva",
-      iniciais: "CS"
-    },
-    status: "aberto",
-    atualizadoEm: "13/04/25 20:56",
-    criadoEm: "13/04/25 08:45",
-    atualizadoPor: "Sistema",
-    descricao: "A conexão de internet está muito lenta em todo o departamento. Os colaboradores estão com dificuldade para acessar os sistemas e realizar suas atividades. A velocidade de download está bem abaixo do contratado.",
-    equipamento: "Roteador Wi-Fi",
-    localizacao: "Sala 301 - TI",
-    imagem: {
-      nome: "teste-velocidade.png",
-      url: "/uploads/chamados/00003/teste-velocidade.png",
-      tamanho: "1.1 MB"
-    }
-  },
-  "00004": {
-    id: "00004",
-    titulo: "Backup não está funcionando",
-    servico: "Recuperação de Dados",
-    tecnico: {
-      nome: "Carlos Silva",
-      iniciais: "CS"
-    },
-    status: "aberto",
-    atualizadoEm: "12/04/25 15:20",
-    criadoEm: "12/04/25 10:15",
-    atualizadoPor: "Sistema",
-    descricao: "O sistema de backup automático não está funcionando há 3 dias. Os dados não estão sendo salvos na rede e há risco de perda de informações importantes. Necessário verificar as configurações e restaurar o funcionamento.",
-    equipamento: "Servidor de Backup",
-    localizacao: "Sala de Servidores"
-  },
-  "00005": {
-    id: "00005",
-    titulo: "Meu fone não conecta no computador",
-    servico: "Suporte de Software",
-    tecnico: {
-      nome: "Ana Oliveira",
-      iniciais: "AO"
+      nome: "João Oliveira",
+      iniciais: "JO"
     },
     status: "encerrado",
-    atualizadoEm: "11/04/25 15:16",
-    criadoEm: "11/04/25 09:30",
-    atualizadoPor: "Ana Oliveira",
-    descricao: "O headset USB não está sendo reconhecido pelo computador. Já tentamos em outras portas USB e o problema persiste. É essencial para as videochamadas da equipe.",
-    equipamento: "Headset USB",
-    localizacao: "Sala 102 - Atendimento"
+    atualizadoEm: "11/04/25 16:45",
+    criadoEm: "11/04/25 10:15",
+    atualizadoPor: "João Oliveira",
+    descricao: "Não estou conseguindo enviar nem receber emails. A mensagem de erro indica problema de autenticação. Já tentei reconfigurar a senha mas não funcionou.",
+    equipamento: "Outlook 2021",
+    localizacao: "Sala 150 - Diretoria"
   }
 }
 
-const getStatusVariant = (status: string) => {
+function getStatusVariant(status: string) {
   switch (status) {
     case "aberto":
       return "destructive"
     case "em-atendimento":
-      return "warning"
-    case "encerrado":
-      return "success"
-    default:
       return "default"
+    case "encerrado":
+      return "secondary"
+    default:
+      return "outline"
   }
 }
 
-const getStatusLabel = (status: string) => {
+function getStatusLabel(status: string) {
   switch (status) {
     case "aberto":
       return "Aberto"
     case "em-atendimento":
-      return "Em atendimento"
+      return "Em Atendimento"
     case "encerrado":
       return "Encerrado"
     default:
@@ -161,252 +129,237 @@ const getStatusLabel = (status: string) => {
 export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   const router = useRouter()
   const [chamado, setChamado] = useState<typeof mockChamados[string] | null>(null)
-  const [loading, setLoading] = useState(true)
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
   useEffect(() => {
-    // Simular carregamento dos dados
-    const timer = setTimeout(() => {
-      setChamado(mockChamados[chamadoId] || null)
-      setLoading(false)
-    }, 500)
-
-    return () => clearTimeout(timer)
+    const chamadoData = mockChamados[chamadoId]
+    setChamado(chamadoData || null)
   }, [chamadoId])
 
-  if (loading) {
+  if (!chamado) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="text-lg">Carregando...</div>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Chamado não encontrado</p>
       </div>
     )
   }
 
-  if (!chamado) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[200px] space-y-4">
-        <div className="text-lg font-medium">Chamado não encontrado</div>
-        <Button onClick={() => router.push("/dashboard")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar ao Dashboard
-        </Button>
-      </div>
-    )
+  const handleImageClick = (index?: number) => {
+    if (index !== undefined) {
+      setSelectedImageIndex(index)
+    }
+    setImageModalOpen(true)
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => router.push("/dashboard")}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <h1 className="text-2xl font-bold">Chamado #{chamado.id}</h1>
-            <Badge variant={getStatusVariant(chamado.status)}>
-              {getStatusLabel(chamado.status)}
-            </Badge>
-          </div>
-          <p className="text-lg text-muted-foreground">{chamado.titulo}</p>
+      {/* Header com botão voltar */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.back()}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">Chamado #{chamado.id}</h1>
+          <p className="text-muted-foreground">{chamado.titulo}</p>
         </div>
+        <Badge variant={getStatusVariant(chamado.status)}>
+          {getStatusLabel(chamado.status)}
+        </Badge>
       </div>
 
+      {/* Cards principais */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Informações Gerais */}
+        {/* Informações do Chamado */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Informações Gerais
+              Informações do Chamado
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Criado em</p>
-                <p className="text-sm text-muted-foreground">{chamado.criadoEm}</p>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Última atualização</p>
-                <p className="text-sm text-muted-foreground">{chamado.atualizadoEm}</p>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Título</label>
+              <p className="text-sm">{chamado.titulo}</p>
             </div>
             
             <Separator />
             
             <div>
-              <p className="text-sm font-medium mb-2">Tipo de Serviço</p>
-              <p className="text-sm text-muted-foreground">{chamado.servico}</p>
+              <label className="text-sm font-medium text-muted-foreground">Descrição</label>
+              <p className="text-sm">{chamado.descricao}</p>
             </div>
             
-            {(chamado.equipamento || chamado.localizacao) && (
-              <>
-                <Separator />
-                
-                {chamado.equipamento && (
-                  <div className="flex items-center gap-3">
-                    <Monitor className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Equipamento</p>
-                      <p className="text-sm text-muted-foreground">{chamado.equipamento}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {chamado.localizacao && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Localização</p>
-                      <p className="text-sm text-muted-foreground">{chamado.localizacao}</p>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+            <Separator />
             
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Serviço</label>
+                <p className="text-sm">{chamado.servico}</p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Status</label>
+                <div className="mt-1">
+                  <Badge variant={getStatusVariant(chamado.status)}>
+                    {getStatusLabel(chamado.status)}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Criado em
+                </label>
+                <p className="text-sm">{chamado.criadoEm}</p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Atualizado em</label>
+                <p className="text-sm">{chamado.atualizadoEm}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Técnico Responsável */}
+        {/* Informações Técnicas */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Técnico Responsável
+              <Monitor className="h-5 w-5" />
+              Informações Técnicas
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={chamado.tecnico.avatar} />
-                <AvatarFallback>{chamado.tecnico.iniciais}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{chamado.tecnico.nome}</p>
-                <p className="text-sm text-muted-foreground">Técnico de TI</p>
-              </div>
-            </div>
+            {chamado.tecnico && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    Técnico Responsável
+                  </label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="" />
+                      <AvatarFallback className="text-xs">
+                        {chamado.tecnico.iniciais}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{chamado.tecnico.nome}</span>
+                  </div>
+                </div>
+                
+                <Separator />
+              </>
+            )}
             
-            <Separator />
+            {chamado.equipamento && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Equipamento</label>
+                  <p className="text-sm">{chamado.equipamento}</p>
+                </div>
+                
+                <Separator />
+              </>
+            )}
+            
+            {chamado.localizacao && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  Localização
+                </label>
+                <p className="text-sm">{chamado.localizacao}</p>
+              </div>
+            )}
             
             <div>
-              <p className="text-sm font-medium mb-2">Atualizado por</p>
-              <p className="text-sm text-muted-foreground">{chamado.atualizadoPor}</p>
+              <label className="text-sm font-medium text-muted-foreground">Última atualização por</label>
+              <p className="text-sm">{chamado.atualizadoPor}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Descrição do Problema */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Descrição do Problema</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground leading-relaxed">
-            {chamado.descricao}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Imagens do Problema */}
-      {(chamado.imagem || (chamado.imagens && chamado.imagens.length > 0)) && (
+      {/* Anexos */}
+      {((chamado.imagem) || (chamado.imagens && chamado.imagens.length > 0)) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
-              {chamado.imagens && chamado.imagens.length > 1 ? `Imagens do Problema (${chamado.imagens.length})` : "Imagem do Problema"}
+              Anexos
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Múltiplas imagens */}
-            {chamado.imagens && chamado.imagens.length > 0 ? (
-              chamado.imagens.map((imagem, index) => (
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {chamado.imagem && (
+                <div 
+                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleImageClick()}
+                >
+                  <div className="flex-shrink-0">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{chamado.imagem.nome}</p>
+                    <p className="text-xs text-muted-foreground">{chamado.imagem.tamanho}</p>
+                  </div>
+                  <Download className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+              
+              {chamado.imagens?.map((imagem, index) => (
                 <div 
                   key={index}
-                  className="flex items-center justify-between p-4 border rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/60 transition-colors"
-                  onClick={() => {
-                    setSelectedImageIndex(index)
-                    setImageModalOpen(true)
-                  }}
+                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleImageClick(index)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-md">
-                      <ImageIcon className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{imagem.nome}</p>
-                      <p className="text-xs text-muted-foreground">{imagem.tamanho}</p>
-                    </div>
+                  <div className="flex-shrink-0">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Baixar
-                  </Button>
-                </div>
-              ))
-            ) : (
-              /* Imagem única (compatibilidade) */
-              chamado.imagem && (
-                <div 
-                  className="flex items-center justify-between p-4 border rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/60 transition-colors"
-                  onClick={() => {
-                    setSelectedImageIndex(0)
-                    setImageModalOpen(true)
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-md">
-                      <ImageIcon className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{chamado.imagem.nome}</p>
-                      <p className="text-xs text-muted-foreground">{chamado.imagem.tamanho}</p>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{imagem.nome}</p>
+                    <p className="text-xs text-muted-foreground">{imagem.tamanho}</p>
                   </div>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Baixar
-                  </Button>
+                  <Download className="h-4 w-4 text-muted-foreground" />
                 </div>
-              )
-            )}
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Ações */}
-      <div className="flex gap-3 justify-end">
-        <Button 
-          variant="outline"
+      <div className="flex flex-wrap gap-3">
+        <Button
           onClick={() => router.push(`/editar-chamado/${chamado.id}`)}
+          className="gap-2"
         >
+          <Edit className="h-4 w-4" />
           Editar Chamado
         </Button>
         {chamado.status !== "encerrado" && (
-          <Button>
+          <Button variant="outline">
             Encerrar Chamado
           </Button>
         )}
       </div>
 
       {/* Modal de Imagem */}
-      {(chamado.imagem || (chamado.imagens && chamado.imagens.length > 0)) && (
+      {((chamado.imagem) || (chamado.imagens && chamado.imagens.length > 0)) && (
         <ImageModal
           isOpen={imageModalOpen}
           onClose={() => setImageModalOpen(false)}

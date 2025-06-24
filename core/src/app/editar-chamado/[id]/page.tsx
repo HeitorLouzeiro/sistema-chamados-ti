@@ -1,15 +1,17 @@
 import { EditarChamadoForm } from "@/components/editar-chamado-form"
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function EditarChamadoPage({ params }: PageProps) {
+export default async function EditarChamadoPage({ params }: PageProps) {
+  const { id } = await params
+  
   return (
     <div className="container mx-auto p-6">
-      <EditarChamadoForm chamadoId={params.id} />
+      <EditarChamadoForm chamadoId={id} />
     </div>
   )
 }

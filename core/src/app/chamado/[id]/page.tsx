@@ -16,12 +16,14 @@ import {
 import { ChamadoDetails } from "@/components/chamado-details"
 
 interface ChamadoDetailPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function ChamadoDetailPage({ params }: ChamadoDetailPageProps) {
+export default async function ChamadoDetailPage({ params }: ChamadoDetailPageProps) {
+  const { id } = await params
+  
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -42,14 +44,14 @@ export default function ChamadoDetailPage({ params }: ChamadoDetailPageProps) {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Chamado #{params.id}</BreadcrumbPage>
+                  <BreadcrumbPage>Chamado #{id}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <ChamadoDetails chamadoId={params.id} />
+          <ChamadoDetails chamadoId={id} />
         </div>
       </SidebarInset>
     </SidebarProvider>
