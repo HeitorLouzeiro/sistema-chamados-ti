@@ -16,7 +16,9 @@ import {
 import { DataTable } from "@/components/data-table"
 import { columns, type Chamado } from "@/components/columns"
 import { StatsCard } from "@/components/stats-card"
-import { Ticket, Clock, CheckCircle } from "lucide-react"
+import { Ticket, Clock, CheckCircle, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Page() {
   const data: Chamado[] = [
@@ -130,7 +132,15 @@ export default function Page() {
             />
           </div>
           <div className="bg-white rounded-xl border p-4 md:p-6">
-            <h2 className="text-lg font-semibold mb-4">Meus Chamados</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Meus Chamados</h2>
+              <Button asChild>
+                <Link href="/cadastrar-chamado">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Chamado
+                </Link>
+              </Button>
+            </div>
             <DataTable columns={columns} data={data} />
           </div>
         </div>

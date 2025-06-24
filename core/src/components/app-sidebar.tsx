@@ -5,6 +5,7 @@ import {
   Bot,
   Command,
   ClipboardList,
+  Plus,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -28,8 +29,13 @@ const data = {
   navMain: [
     {
       title: "Meus Chamados",
-      url: "#",
+      url: "/dashboard",
       icon: ClipboardList,
+    },
+    {
+      title: "Novo Chamado",
+      url: "/cadastrar-chamado",
+      icon: Plus,
     }
   ],
 }
