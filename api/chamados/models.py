@@ -170,8 +170,11 @@ class Chamado(models.Model):
                 numero__isnull=False
             ).order_by('-numero').first()
             
-            if ultimo_numero:
-                proximo_numero = int(ultimo_numero.numero) + 1
+            if ultimo_numero and ultimo_numero.numero:
+                try:
+                    proximo_numero = int(ultimo_numero.numero) + 1
+                except (ValueError, TypeError):
+                    proximo_numero = 1
             else:
                 proximo_numero = 1
             
@@ -179,21 +182,24 @@ class Chamado(models.Model):
         
         # Atualizar datas baseadas no status
         if self.pk:  # Se já existe
-            chamado_anterior = Chamado.objects.get(pk=self.pk)
-            
-            # Se mudou para em_atendimento e não tinha data de atendimento
-            if (self.status == 'em_atendimento' and 
-                chamado_anterior.status != 'em_atendimento' and 
-                not self.atendido_em):
-                from django.utils import timezone
-                self.atendido_em = timezone.now()
-            
-            # Se mudou para encerrado e não tinha data de encerramento
-            if (self.status == 'encerrado' and 
-                chamado_anterior.status != 'encerrado' and 
-                not self.encerrado_em):
-                from django.utils import timezone
-                self.encerrado_em = timezone.now()
+            try:
+                chamado_anterior = Chamado.objects.get(pk=self.pk)
+                
+                # Se mudou para em_atendimento e não tinha data de atendimento
+                if (self.status == 'em_atendimento' and 
+                    chamado_anterior.status != 'em_atendimento' and 
+                    not self.atendido_em):
+                    from django.utils import timezone
+                    self.atendido_em = timezone.now()
+                
+                # Se mudou para encerrado e não tinha data de encerramento
+                if (self.status == 'encerrado' and 
+                    chamado_anterior.status != 'encerrado' and 
+                    not self.encerrado_em):
+                    from django.utils import timezone
+                    self.encerrado_em = timezone.now()
+            except Chamado.DoesNotExist:
+                pass
         
         super().save(*args, **kwargs)
 
@@ -255,6 +261,9 @@ class AnexoChamado(models.Model):
     @property
     def tamanho_formatado(self):
         """Retorna o tamanho formatado em MB, KB ou bytes"""
+        if not self.tamanho or self.tamanho == 0:
+            return "0 bytes"
+        
         if self.tamanho >= 1024 * 1024:
             return f"{self.tamanho / (1024 * 1024):.1f} MB"
         elif self.tamanho >= 1024:

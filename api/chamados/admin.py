@@ -44,13 +44,15 @@ class ChamadoAdmin(admin.ModelAdmin):
             'fields': ('status', 'prioridade')
         }),
         ('Equipamento', {
-            'fields': ('equipamento', 'localizacao')
+            'fields': ('equipamento', 'localizacao'),
+            'classes': ('collapse',)
         }),
         ('Responsáveis', {
             'fields': ('solicitante', 'tecnico_responsavel')
         }),
         ('Observações', {
-            'fields': ('observacoes_tecnico',)
+            'fields': ('observacoes_tecnico',),
+            'classes': ('collapse',)
         }),
         ('Datas', {
             'fields': ('criado_em', 'atualizado_em', 'atendido_em', 'encerrado_em'),
@@ -59,6 +61,12 @@ class ChamadoAdmin(admin.ModelAdmin):
     )
     
     inlines = [AnexoChamadoInline, HistoricoChamadoInline]
+    
+    def get_queryset(self, request):
+        """Otimizar consultas"""
+        return super().get_queryset(request).select_related(
+            'tipo_servico', 'solicitante', 'tecnico_responsavel'
+        )
 
 
 @admin.register(AnexoChamado)
