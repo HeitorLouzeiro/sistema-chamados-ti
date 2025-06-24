@@ -10,7 +10,6 @@ export type Chamado = {
   id: string
   titulo: string
   servico: string
-  valorTotal: string
   tecnico: {
     nome: string
     avatar?: string
@@ -18,6 +17,11 @@ export type Chamado = {
   }
   status: "aberto" | "em-atendimento" | "encerrado"
   atualizadoEm: string
+  imagem?: {
+    nome: string
+    url: string
+    tamanho: string
+  }
 }
 
 const getStatusVariant = (status: string) => {

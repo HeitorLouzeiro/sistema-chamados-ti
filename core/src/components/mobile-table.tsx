@@ -1,12 +1,11 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Eye } from "lucide-react"
 import { type Chamado } from "@/components/columns"
 
 interface MobileTableProps {
   data: Chamado[]
+  onRowClick?: (chamado: Chamado) => void
 }
 
 const getStatusVariant = (status: string) => {
@@ -35,11 +34,15 @@ const getStatusLabel = (status: string) => {
   }
 }
 
-export function MobileTable({ data }: MobileTableProps) {
+export function MobileTable({ data, onRowClick }: MobileTableProps) {
   return (
     <div className="space-y-3">
       {data.map((chamado) => (
-        <div key={chamado.id} className="bg-white border rounded-lg p-4 space-y-3">
+        <div 
+          key={chamado.id} 
+          className="bg-white border rounded-lg p-4 space-y-3 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => onRowClick?.(chamado)}
+        >
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="text-xs text-muted-foreground mb-1">
@@ -53,9 +56,6 @@ export function MobileTable({ data }: MobileTableProps) {
               <Badge variant={getStatusVariant(chamado.status)} className="text-xs">
                 {getStatusLabel(chamado.status)}
               </Badge>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Eye className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>

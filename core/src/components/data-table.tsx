@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { type Chamado } from "@/components/columns"
 
 import {
   Table,
@@ -25,7 +27,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MobileTable } from "@/components/mobile-table"
-import { type Chamado } from "@/components/columns"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -36,10 +37,15 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter()
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+
+  const handleRowClick = (chamado: Chamado) => {
+    router.push(`/chamado/${chamado.id}`)
+  }
 
   const table = useReactTable({
     data,
@@ -101,6 +107,8 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleRowClick(row.original as Chamado)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -129,7 +137,10 @@ export function DataTable<TData, TValue>({
 
       {/* Mobile Table */}
       <div className="md:hidden">
-        <MobileTable data={table.getRowModel().rows.map(row => row.original as Chamado)} />
+        <MobileTable 
+          data={table.getRowModel().rows.map(row => row.original as Chamado)} 
+          onRowClick={handleRowClick}
+        />
       </div>
 
       <div className="flex items-center justify-end space-x-2 py-4">

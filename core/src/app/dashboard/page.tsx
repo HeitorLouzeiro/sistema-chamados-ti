@@ -26,19 +26,22 @@ export default function Page() {
       id: "00003",
       titulo: "Rede lenta",
       servico: "Instalação de Rede",
-      valorTotal: "R$ 180,00",
       tecnico: {
         nome: "Carlos Silva",
         iniciais: "CS"
       },
       status: "aberto",
-      atualizadoEm: "13/04/25 20:56"
+      atualizadoEm: "13/04/25 20:56",
+      imagem: {
+        nome: "teste-velocidade.png",
+        url: "/uploads/chamados/00003/teste-velocidade.png",
+        tamanho: "1.1 MB"
+      }
     },
     {
       id: "00004",
       titulo: "Backup não está funcionando",
       servico: "Recuperação de Dados",
-      valorTotal: "R$ 200,00",
       tecnico: {
         nome: "Carlos Silva",
         iniciais: "CS"
@@ -50,7 +53,6 @@ export default function Page() {
       id: "00001",
       titulo: "Computador não liga",
       servico: "Manutenção de Hardware",
-      valorTotal: "R$ 150,00",
       tecnico: {
         nome: "Carlos Silva",
         iniciais: "CS"
@@ -62,7 +64,6 @@ export default function Page() {
       id: "00002",
       titulo: "Instalação de software de gestão",
       servico: "Suporte de Software",
-      valorTotal: "R$ 200,00",
       tecnico: {
         nome: "Ana Oliveira",
         iniciais: "AO"
@@ -74,7 +75,6 @@ export default function Page() {
       id: "00005",
       titulo: "Meu fone não conecta no computador",
       servico: "Suporte de Software",
-      valorTotal: "R$ 80,00",
       tecnico: {
         nome: "Ana Oliveira",
         iniciais: "AO"
