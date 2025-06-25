@@ -17,8 +17,16 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ChamadoForm } from "@/components/chamado-form"
+import { useAuthRedirect } from "@/hooks/use-auth-redirect"
 
 export default function CadastrarChamadoPage() {
+  // Verificar autenticação
+  const { shouldRedirect } = useAuthRedirect({ requireAuth: true })
+  
+  // Se deve redirecionar, não renderizar nada
+  if (shouldRedirect) {
+    return null
+  }
   return (
     <SidebarProvider>
       <AppSidebar />

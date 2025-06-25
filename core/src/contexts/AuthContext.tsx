@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Usuario, authService } from '@/lib/api'
+import toast from 'react-hot-toast'
 
 interface AuthContextType {
   usuario: Usuario | null

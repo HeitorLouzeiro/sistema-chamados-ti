@@ -12,6 +12,7 @@ import { ArrowLeft, Calendar, User, MapPin, Monitor, FileText, Image as ImageIco
 import { ImageModal } from "@/components/image-modal"
 import { chamadoService, type Chamado } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
+import toast from "react-hot-toast"
 
 interface ChamadoDetailsProps {
   chamadoId: string
@@ -89,8 +90,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
         setObservacoes(chamadoData.observacoes_tecnico || "")
       } catch (error) {
         console.error('Erro ao carregar chamado:', error)
-        // TODO: Implementar toast notification de erro
-        alert("Erro ao carregar os detalhes do chamado")
+        toast.error("Erro ao carregar os detalhes do chamado")
       } finally {
         setLoading(false)
       }
@@ -104,6 +104,8 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   const handleStatusUpdate = async (novoStatus: string) => {
     if (!chamado || !usuario) return
 
+    const toastId = toast.loading("Atualizando status do chamado...")
+
     try {
       // Se está iniciando o atendimento e não há técnico responsável, atribuir o usuário atual
       if (novoStatus === "em_atendimento" && !chamado.tecnico_responsavel && usuario.tipo_usuario === 'tecnico') {
@@ -112,9 +114,17 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           status: novoStatus,
           tecnico_responsavel: usuario.id
         })
+        toast.success("Chamado assumido e atendimento iniciado!", { id: toastId })
       } else {
         // Apenas atualizar o status
         await chamadoService.atualizarStatus(chamado.id, novoStatus)
+        
+        const statusMessage = {
+          'em_atendimento': 'Atendimento iniciado com sucesso!',
+          'encerrado': 'Chamado encerrado com sucesso!'
+        }[novoStatus] || 'Status atualizado com sucesso!'
+        
+        toast.success(statusMessage, { id: toastId })
       }
 
       console.log('Status atualizado, recarregando dados completos...')
@@ -127,12 +137,14 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       console.log("Status do chamado atualizado com sucesso")
     } catch (error) {
       console.error('Erro ao atualizar status:', error)
-      alert("Erro ao atualizar o status do chamado")
+      toast.error("Erro ao atualizar o status do chamado", { id: toastId })
     }
   }
 
   const handleSalvarObservacoes = async () => {
     if (!chamado || !usuario) return
+
+    const toastId = toast.loading("Salvando observações...")
 
     try {
       setSalvandoObservacoes(true)
@@ -150,10 +162,12 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       
       setChamado(chamadoCompleto)
       setEditandoObservacoes(false)
+      
+      toast.success("Observações salvas com sucesso!", { id: toastId })
       console.log("Observações salvas com sucesso")
     } catch (error) {
       console.error('Erro ao salvar observações:', error)
-      alert("Erro ao salvar as observações")
+      toast.error("Erro ao salvar as observações", { id: toastId })
       // Reverter as observações em caso de erro
       setObservacoes(chamado.observacoes_tecnico || "")
     } finally {
@@ -164,6 +178,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   const handleCancelarEdicao = () => {
     setObservacoes(chamado?.observacoes_tecnico || "")
     setEditandoObservacoes(false)
+    toast("Edição cancelada", { icon: "❌", duration: 1500 })
   }
 
   // Função auxiliar para comparar IDs de forma segura
@@ -491,6 +506,19 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                   size="sm"
                   onClick={() => setEditandoObservacoes(true)}
                   className="h-8 px-2"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              )}
+              {!podeEditarObservacoes && usuario?.tipo_usuario === 'tecnico' && chamado.status !== 'encerrado' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Sem toast aqui, apenas visual desabilitado
+                  }}
+                  className="h-8 px-2 opacity-50"
+                  disabled
                 >
                   <Edit className="h-3 w-3" />
                 </Button>

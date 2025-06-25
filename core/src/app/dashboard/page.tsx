@@ -24,10 +24,18 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
+import { useAuthRedirect } from "@/hooks/use-auth-redirect"
 import { chamadoService, type Chamado, type EstatisticasDashboard } from "@/lib/api"
 
 export default function DashboardPage() {
+  // Verificar autenticação
+  const { shouldRedirect } = useAuthRedirect({ requireAuth: true })
   const { usuario } = useAuth()
+
+  // Se deve redirecionar, não renderizar nada
+  if (shouldRedirect) {
+    return null
+  }
   const [estatisticas, setEstatisticas] = useState<EstatisticasDashboard | null>(null)
   const [chamados, setChamados] = useState<Chamado[]>([])
   const [carregandoEstatisticas, setCarregandoEstatisticas] = useState(true)

@@ -18,6 +18,7 @@ import { X, Upload, Image as ImageIcon, AlertCircle } from "lucide-react"
 import { chamadoService, tipoServicoService, TipoServico } from "@/lib/api"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/AuthContext"
+import toast from "react-hot-toast"
 
 interface ChamadoFormData {
   titulo: string
@@ -137,7 +138,12 @@ export function ChamadoForm() {
         }
       }
       
-      // Redirecionar para o dashboard após sucesso
+      // Toast de sucesso e redirecionamento para o dashboard
+      toast.success("Chamado criado com sucesso!", {
+        duration: 3000,
+        icon: "✅"
+      })
+      
       router.push("/dashboard")
     } catch (error: any) {
       console.error("Erro ao criar chamado:", error)

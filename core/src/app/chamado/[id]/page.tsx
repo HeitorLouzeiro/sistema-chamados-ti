@@ -1,3 +1,5 @@
+"use client"
+
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -14,6 +16,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ChamadoDetails } from "@/components/chamado-details"
+import { useAuthRedirect } from "@/hooks/use-auth-redirect"
+import { use } from "react"
 
 interface ChamadoDetailPageProps {
   params: Promise<{
@@ -21,8 +25,17 @@ interface ChamadoDetailPageProps {
   }>
 }
 
-export default async function ChamadoDetailPage({ params }: ChamadoDetailPageProps) {
-  const { id } = await params
+export default function ChamadoDetailPage({ params }: ChamadoDetailPageProps) {
+  // Verificar autenticação
+  const { shouldRedirect } = useAuthRedirect({ requireAuth: true })
+  
+  // Resolver params usando React.use()
+  const resolvedParams = use(params)
+  
+  // Se deve redirecionar, não renderizar nada
+  if (shouldRedirect) {
+    return null
+  }
   
   return (
     <SidebarProvider>
@@ -44,14 +57,14 @@ export default async function ChamadoDetailPage({ params }: ChamadoDetailPagePro
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Chamado #{id}</BreadcrumbPage>
+                  <BreadcrumbPage>Chamado #{resolvedParams.id}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <ChamadoDetails chamadoId={id} />
+          <ChamadoDetails chamadoId={resolvedParams.id} />
         </div>
       </SidebarInset>
     </SidebarProvider>

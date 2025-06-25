@@ -1,4 +1,5 @@
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
 // Configuração base da API
 const api = axios.create({
@@ -24,6 +25,32 @@ api.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
+// Função para forçar logout e redirecionamento
+const forceLogout = (message: string = 'Sua sessão expirou.') => {
+  if (typeof window !== 'undefined') {
+    // Limpar dados locais
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
+    
+    // Notificar o usuário se não estiver na página de login
+    if (!window.location.pathname.includes('/login')) {
+      toast.error(message, {
+        duration: 4000,
+        icon: '🔒'
+      })
+      
+      // Aguardar um momento para o toast aparecer, depois redirecionar
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 1500)
+    } else {
+      // Se já estiver na página de login, apenas redirecionar
+      window.location.href = '/login'
+    }
+  }
+}
 
 // Interceptor para tratar respostas e erros
 api.interceptors.response.use(
@@ -51,21 +78,18 @@ api.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
             return api(originalRequest)
           } catch (refreshError) {
-            // Se falhar, limpar dados e redirecionar
-            localStorage.removeItem('access_token')
-            localStorage.removeItem('refresh_token')
-            localStorage.removeItem('user')
-            window.location.href = '/login'
+            // Se falhar no refresh, forçar logout
+            console.error('Erro ao renovar token:', refreshError)
+            forceLogout('Sua sessão expirou. Você será redirecionado para o login.')
           }
         } else {
-          // Sem refresh token, limpar tudo
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          localStorage.removeItem('user')
-          window.location.href = '/login'
+          // Sem refresh token, forçar logout
+          forceLogout('Você precisa fazer login novamente.')
         }
       }
     }
+    
+    // Para outros erros, apenas rejeitar
     return Promise.reject(error)
   }
 )
@@ -328,3 +352,6 @@ export const tipoServicoService = {
 }
 
 export default api
+
+// Exportar a função forceLogout para uso externo se necessário
+export { forceLogout }
