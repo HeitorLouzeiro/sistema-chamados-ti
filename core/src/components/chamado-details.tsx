@@ -7,97 +7,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Calendar, User, MapPin, Monitor, FileText, Image as ImageIcon, Download, Edit } from "lucide-react"
-import { type Chamado } from "@/components/columns"
+import { Textarea } from "@/components/ui/textarea"
+import { ArrowLeft, Calendar, User, MapPin, Monitor, FileText, Image as ImageIcon, Download, Edit, Loader2, Save } from "lucide-react"
 import { ImageModal } from "@/components/image-modal"
+import { chamadoService, type Chamado } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface ChamadoDetailsProps {
   chamadoId: string
-}
-
-// Dados mockados para demonstração
-const mockChamados: Record<string, Chamado & { 
-  criadoEm: string; 
-  atualizadoPor: string; 
-  descricao: string;
-  equipamento?: string;
-  localizacao?: string;
-  imagem?: {
-    nome: string;
-    url: string;
-    tamanho: string;
-  };
-  imagens?: Array<{
-    nome: string;
-    url: string;
-    tamanho: string;
-  }>;
-}> = {
-  "00001": {
-    id: "00001",
-    titulo: "Computador não liga",
-    servico: "Manutenção de Hardware",
-    tecnico: {
-      nome: "Carlos Silva",
-      iniciais: "CS"
-    },
-    status: "em-atendimento",
-    atualizadoEm: "12/04/25 09:01",
-    criadoEm: "10/04/25 14:30",
-    atualizadoPor: "Sistema",
-    descricao: "O computador da estação de trabalho não está ligando. Já verificamos o cabo de energia e está conectado corretamente. A luz do monitor está acesa, mas a CPU não responde. Precisa de verificação urgente pois está impactando o trabalho da equipe.",
-    equipamento: "Computador Desktop",
-    localizacao: "Sala 101 - Departamento Administrativo",
-    imagens: [
-      {
-        nome: "computador-frontal.jpg",
-        url: "/uploads/chamados/00001/computador-frontal.jpg",
-        tamanho: "2.3 MB"
-      },
-      {
-        nome: "computador-traseira.jpg",
-        url: "/uploads/chamados/00001/computador-traseira.jpg",
-        tamanho: "1.8 MB"
-      }
-    ]
-  },
-  "00002": {
-    id: "00002",
-    titulo: "Impressora com papel atolado",
-    servico: "Suporte Técnico",
-    tecnico: {
-      nome: "Ana Santos",
-      iniciais: "AS"
-    },
-    status: "aberto",
-    atualizadoEm: "12/04/25 08:30",
-    criadoEm: "12/04/25 08:00",
-    atualizadoPor: "Sistema",
-    descricao: "A impressora HP LaserJet Pro está com papel atolado constantemente. Já tentamos remover o papel conforme as instruções, mas o problema persiste. A impressora é usada por toda a equipe e está causando atrasos no trabalho.",
-    equipamento: "Impressora HP LaserJet Pro",
-    localizacao: "Sala 205 - Departamento de RH",
-    imagem: {
-      nome: "impressora-atolada.jpg",
-      url: "/uploads/chamados/00002/impressora-atolada.jpg",
-      tamanho: "1.5 MB"
-    }
-  },
-  "00003": {
-    id: "00003",
-    titulo: "Email não está funcionando",
-    servico: "Configuração de Sistema",
-    tecnico: {
-      nome: "João Oliveira",
-      iniciais: "JO"
-    },
-    status: "encerrado",
-    atualizadoEm: "11/04/25 16:45",
-    criadoEm: "11/04/25 10:15",
-    atualizadoPor: "João Oliveira",
-    descricao: "Não estou conseguindo enviar nem receber emails. A mensagem de erro indica problema de autenticação. Já tentei reconfigurar a senha mas não funcionou.",
-    equipamento: "Outlook 2021",
-    localizacao: "Sala 150 - Diretoria"
-  }
 }
 
 function getStatusVariant(status: string) {
@@ -117,7 +34,7 @@ function getStatusLabel(status: string) {
   switch (status) {
     case "aberto":
       return "Aberto"
-    case "em-atendimento":
+    case "em_atendimento":
       return "Em Atendimento"
     case "encerrado":
       return "Encerrado"
@@ -126,16 +43,209 @@ function getStatusLabel(status: string) {
   }
 }
 
+function formatarData(data: string) {
+  if (!data) return 'Data não disponível'
+  
+  try {
+    const date = new Date(data)
+    if (isNaN(date.getTime())) {
+      return 'Data inválida'
+    }
+    
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    console.error('Erro ao formatar data:', error)
+    return 'Erro na data'
+  }
+}
+
 export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   const router = useRouter()
-  const [chamado, setChamado] = useState<typeof mockChamados[string] | null>(null)
+  const { usuario } = useAuth()
+  const [chamado, setChamado] = useState<Chamado | null>(null)
+  const [loading, setLoading] = useState(true)
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [observacoes, setObservacoes] = useState("")
+  const [editandoObservacoes, setEditandoObservacoes] = useState(false)
+  const [salvandoObservacoes, setSalvandoObservacoes] = useState(false)
 
   useEffect(() => {
-    const chamadoData = mockChamados[chamadoId]
-    setChamado(chamadoData || null)
+    const carregarChamado = async () => {
+      try {
+        setLoading(true)
+        const chamadoData = await chamadoService.obter(parseInt(chamadoId))
+        console.log('Dados do chamado carregados:', chamadoData) // Debug
+        console.log('Tipo serviço carregado:', chamadoData.tipo_servico) // Debug específico
+        console.log('Solicitante carregado:', chamadoData.solicitante) // Debug específico
+        console.log('Técnico responsável carregado:', chamadoData.tecnico_responsavel) // Debug específico
+        setChamado(chamadoData)
+        setObservacoes(chamadoData.observacoes_tecnico || "")
+      } catch (error) {
+        console.error('Erro ao carregar chamado:', error)
+        // TODO: Implementar toast notification de erro
+        alert("Erro ao carregar os detalhes do chamado")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (chamadoId) {
+      carregarChamado()
+    }
   }, [chamadoId])
+
+  const handleStatusUpdate = async (novoStatus: string) => {
+    if (!chamado || !usuario) return
+
+    try {
+      // Se está iniciando o atendimento e não há técnico responsável, atribuir o usuário atual
+      if (novoStatus === "em_atendimento" && !chamado.tecnico_responsavel && usuario.tipo_usuario === 'tecnico') {
+        // Atualizar o chamado com o técnico responsável e o status
+        await chamadoService.atualizar(chamado.id, {
+          status: novoStatus,
+          tecnico_responsavel: usuario.id
+        })
+      } else {
+        // Apenas atualizar o status
+        await chamadoService.atualizarStatus(chamado.id, novoStatus)
+      }
+
+      console.log('Status atualizado, recarregando dados completos...')
+      
+      // Recarregar os dados completos do chamado
+      const chamadoCompleto = await chamadoService.obter(chamado.id)
+      console.log('Dados completos recarregados após atualizar status:', chamadoCompleto)
+      
+      setChamado(chamadoCompleto)
+      console.log("Status do chamado atualizado com sucesso")
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error)
+      alert("Erro ao atualizar o status do chamado")
+    }
+  }
+
+  const handleSalvarObservacoes = async () => {
+    if (!chamado || !usuario) return
+
+    try {
+      setSalvandoObservacoes(true)
+      
+      // Primeiro, salvar as observações
+      await chamadoService.atualizar(chamado.id, {
+        observacoes_tecnico: observacoes
+      })
+      
+      console.log('Observações salvas, recarregando dados completos...')
+      
+      // Depois, recarregar os dados completos do chamado
+      const chamadoCompleto = await chamadoService.obter(chamado.id)
+      console.log('Dados completos recarregados:', chamadoCompleto)
+      
+      setChamado(chamadoCompleto)
+      setEditandoObservacoes(false)
+      console.log("Observações salvas com sucesso")
+    } catch (error) {
+      console.error('Erro ao salvar observações:', error)
+      alert("Erro ao salvar as observações")
+      // Reverter as observações em caso de erro
+      setObservacoes(chamado.observacoes_tecnico || "")
+    } finally {
+      setSalvandoObservacoes(false)
+    }
+  }
+
+  const handleCancelarEdicao = () => {
+    setObservacoes(chamado?.observacoes_tecnico || "")
+    setEditandoObservacoes(false)
+  }
+
+  // Função auxiliar para comparar IDs de forma segura
+  const compararIds = (id1: any, id2: any): boolean => {
+    if (!id1 || !id2) return false
+    return id1 == id2 || String(id1) === String(id2)
+  }
+
+  // Função para garantir integridade dos dados do chamado
+  const preservarDadosCompletos = (dadosAtualizados: Chamado, dadosOriginais: Chamado) => {
+    console.log('=== PRESERVANDO DADOS ===')
+    console.log('Dados atualizados - tipo_servico:', dadosAtualizados.tipo_servico)
+    console.log('Dados originais - tipo_servico:', dadosOriginais.tipo_servico)
+    console.log('Dados atualizados - solicitante:', dadosAtualizados.solicitante)
+    console.log('Dados originais - solicitante:', dadosOriginais.solicitante)
+    console.log('Dados atualizados - tecnico_responsavel:', dadosAtualizados.tecnico_responsavel)
+    console.log('Dados originais - tecnico_responsavel:', dadosOriginais.tecnico_responsavel)
+    
+    const resultado = {
+      id: dadosAtualizados.id || dadosOriginais.id,
+      numero: dadosAtualizados.numero || dadosOriginais.numero,
+      titulo: dadosAtualizados.titulo || dadosOriginais.titulo,
+      descricao: dadosAtualizados.descricao || dadosOriginais.descricao,
+      status: dadosAtualizados.status || dadosOriginais.status,
+      prioridade: dadosAtualizados.prioridade || dadosOriginais.prioridade,
+      equipamento: dadosAtualizados.equipamento || dadosOriginais.equipamento,
+      localizacao: dadosAtualizados.localizacao || dadosOriginais.localizacao,
+      observacoes_tecnico: dadosAtualizados.observacoes_tecnico || dadosOriginais.observacoes_tecnico,
+      // Datas - preservar se estão válidas
+      criado_em: (dadosAtualizados.criado_em && dadosAtualizados.criado_em !== '') 
+        ? dadosAtualizados.criado_em 
+        : dadosOriginais.criado_em,
+      atualizado_em: (dadosAtualizados.atualizado_em && dadosAtualizados.atualizado_em !== '') 
+        ? dadosAtualizados.atualizado_em 
+        : dadosOriginais.atualizado_em,
+      atendido_em: dadosAtualizados.atendido_em || dadosOriginais.atendido_em,
+      encerrado_em: dadosAtualizados.encerrado_em || dadosOriginais.encerrado_em,
+      // Objetos aninhados - garantir que sempre preserve os originais se não houver dados atualizados
+      tipo_servico: dadosAtualizados.tipo_servico || dadosOriginais.tipo_servico,
+      solicitante: dadosAtualizados.solicitante || dadosOriginais.solicitante,
+      tecnico_responsavel: dadosAtualizados.tecnico_responsavel || dadosOriginais.tecnico_responsavel,
+      anexos: dadosAtualizados.anexos || dadosOriginais.anexos,
+      historico: dadosAtualizados.historico || dadosOriginais.historico
+    }
+    
+    console.log('Resultado final - tipo_servico:', resultado.tipo_servico)
+    console.log('Resultado final - solicitante:', resultado.solicitante)
+    console.log('Resultado final - tecnico_responsavel:', resultado.tecnico_responsavel)
+    console.log('=== FIM PRESERVAÇÃO ===')
+    
+    return resultado
+  }
+
+  // Verificar se o usuário atual pode editar observações
+  // Pode editar se for o técnico responsável OU se for um técnico e não há técnico responsável ainda
+  // MAS NÃO pode editar se o chamado estiver encerrado
+  const podeEditarObservacoes = usuario && chamado?.status !== 'encerrado' && (
+    // É o técnico responsável
+    (chamado?.tecnico_responsavel && 
+     compararIds(chamado.tecnico_responsavel.id, usuario.id)) ||
+    // É um técnico e não há técnico responsável ainda
+    (!chamado?.tecnico_responsavel && usuario.tipo_usuario === 'tecnico')
+  )
+  
+  // Verificar se o usuário atual é o técnico responsável (para outras funcionalidades)
+  const isUsuarioTecnicoResponsavel = usuario && chamado?.tecnico_responsavel && 
+    compararIds(chamado.tecnico_responsavel.id, usuario.id)
+  
+  // Debug logs
+  console.log('Debug - Usuario atual:', usuario)
+  console.log('Debug - Tecnico responsavel:', chamado?.tecnico_responsavel)
+  console.log('Debug - É técnico responsável?', isUsuarioTecnicoResponsavel)
+  console.log('Debug - Pode editar observações?', podeEditarObservacoes)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2 text-muted-foreground">Carregando...</span>
+      </div>
+    )
+  }
 
   if (!chamado) {
     return (
@@ -166,7 +276,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           Voltar
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">Chamado #{chamado.id}</h1>
+          <h1 className="text-2xl font-bold">Chamado #{chamado.numero}</h1>
           <p className="text-muted-foreground">{chamado.titulo}</p>
         </div>
         <Badge variant={getStatusVariant(chamado.status)}>
@@ -202,7 +312,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Serviço</label>
-                <p className="text-sm">{chamado.servico}</p>
+                <p className="text-sm">{chamado.tipo_servico?.nome || 'Não informado'}</p>
               </div>
               
               <div>
@@ -223,14 +333,34 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                   <Calendar className="h-3 w-3" />
                   Criado em
                 </label>
-                <p className="text-sm">{chamado.criadoEm}</p>
+                <p className="text-sm">{formatarData(chamado.criado_em)}</p>
               </div>
               
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Atualizado em</label>
-                <p className="text-sm">{chamado.atualizadoEm}</p>
+                <p className="text-sm">{formatarData(chamado.atualizado_em)}</p>
               </div>
             </div>
+
+            {chamado.atendido_em && (
+              <>
+                <Separator />
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Atendimento iniciado em</label>
+                  <p className="text-sm">{formatarData(chamado.atendido_em)}</p>
+                </div>
+              </>
+            )}
+
+            {chamado.encerrado_em && (
+              <>
+                <Separator />
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Encerrado em</label>
+                  <p className="text-sm">{formatarData(chamado.encerrado_em)}</p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -265,15 +395,15 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
             )}
             
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Última atualização por</label>
-              <p className="text-sm">{chamado.atualizadoPor}</p>
+              <label className="text-sm font-medium text-muted-foreground">Solicitante</label>
+              <p className="text-sm">{chamado.solicitante?.nome_completo || 'Não informado'}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Anexos */}
-      {((chamado.imagem) || (chamado.imagens && chamado.imagens.length > 0)) && (
+      {chamado.anexos && chamado.anexos.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -283,25 +413,9 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {chamado.imagem && (
+              {chamado.anexos.map((anexo, index) => (
                 <div 
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleImageClick()}
-                >
-                  <div className="flex-shrink-0">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{chamado.imagem.nome}</p>
-                    <p className="text-xs text-muted-foreground">{chamado.imagem.tamanho}</p>
-                  </div>
-                  <Download className="h-4 w-4 text-muted-foreground" />
-                </div>
-              )}
-              
-              {chamado.imagens?.map((imagem, index) => (
-                <div 
-                  key={index}
+                  key={anexo.id}
                   className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleImageClick(index)}
                 >
@@ -309,8 +423,8 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{imagem.nome}</p>
-                    <p className="text-xs text-muted-foreground">{imagem.tamanho}</p>
+                    <p className="text-sm font-medium truncate">{anexo.nome_original}</p>
+                    <p className="text-xs text-muted-foreground">{anexo.tamanho_formatado}</p>
                   </div>
                   <Download className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -340,7 +454,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           
           <Separator />
           
-          {chamado.tecnico && (
+          {chamado.tecnico_responsavel ? (
             <>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Técnico Responsável</label>
@@ -348,11 +462,20 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="" />
                     <AvatarFallback className="text-xs">
-                      {chamado.tecnico.iniciais}
+                      {chamado.tecnico_responsavel.iniciais || '??'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm">{chamado.tecnico.nome}</span>
+                  <span className="text-sm">{chamado.tecnico_responsavel.nome_completo || 'Nome não disponível'}</span>
                 </div>
+              </div>
+              
+              <Separator />
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Técnico Responsável</label>
+                <p className="text-sm text-muted-foreground mt-2">Não atribuído</p>
               </div>
               
               <Separator />
@@ -360,12 +483,79 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           )}
           
           <div>
-            <label className="text-sm font-medium text-muted-foreground">Observações do Técnico</label>
-            <div className="mt-2 p-3 border rounded-md bg-muted/30">
-              <p className="text-sm text-muted-foreground">
-                Verificado problema na fonte de alimentação. Substituição necessária.
-              </p>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-muted-foreground">Observações do Técnico</label>
+              {podeEditarObservacoes && !editandoObservacoes && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditandoObservacoes(true)}
+                  className="h-8 px-2"
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              )}
             </div>
+            
+            {editandoObservacoes && podeEditarObservacoes ? (
+              <div className="mt-2 space-y-2">
+                <Textarea
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Digite suas observações sobre o chamado..."
+                  className="min-h-[100px]"
+                  disabled={false} // Garantir que não está desabilitado
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSalvarObservacoes}
+                    disabled={salvandoObservacoes}
+                  >
+                    {salvandoObservacoes ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <Save className="h-3 w-3 mr-1" />
+                    )}
+                    Salvar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelarEdicao}
+                    disabled={salvandoObservacoes}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 p-3 border rounded-md bg-muted/30">
+                <p className="text-sm text-muted-foreground">
+                  {chamado.observacoes_tecnico || "Nenhuma observação registrada"}
+                </p>
+                {chamado.status === 'encerrado' && (
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    O chamado está encerrado e não pode mais ser editado
+                  </p>
+                )}
+                {!podeEditarObservacoes && chamado.status !== 'encerrado' && chamado.tecnico_responsavel && usuario?.tipo_usuario === 'tecnico' && !isUsuarioTecnicoResponsavel && (
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    Apenas o técnico responsável pode editar as observações
+                  </p>
+                )}
+                {!podeEditarObservacoes && chamado.status !== 'encerrado' && !chamado.tecnico_responsavel && usuario?.tipo_usuario === 'tecnico' && (
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    Você pode assumir o chamado para editar as observações
+                  </p>
+                )}
+                {!podeEditarObservacoes && chamado.status !== 'encerrado' && usuario?.tipo_usuario !== 'tecnico' && (
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    Apenas técnicos podem editar as observações
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -373,32 +563,43 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       {/* Ações */}
       <div className="flex flex-wrap gap-3">
         {chamado.status !== "encerrado" && (
-          <Button variant="outline">
-            Encerrar Chamado
-          </Button>
+          <>
+            <Button 
+              variant="outline" 
+              onClick={() => handleStatusUpdate("encerrado")}
+              disabled={!usuario || (usuario.tipo_usuario !== 'tecnico' && usuario.tipo_usuario !== 'admin')}
+            >
+              Encerrar Chamado
+            </Button>
+            
+            {chamado.status === "aberto" && (
+              <Button 
+                variant="default" 
+                onClick={() => handleStatusUpdate("em_atendimento")}
+                disabled={!usuario || usuario.tipo_usuario !== 'tecnico'}
+              >
+                {!chamado.tecnico_responsavel ? 'Assumir e Iniciar Atendimento' : 'Iniciar Atendimento'}
+              </Button>
+            )}
+          </>
+        )}
+        
+        {/* Indicação de permissões */}
+        {usuario && usuario.tipo_usuario !== 'tecnico' && usuario.tipo_usuario !== 'admin' && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Apenas técnicos podem iniciar o atendimento de chamados
+          </p>
         )}
       </div>
 
       {/* Modal de Imagem */}
-      {((chamado.imagem) || (chamado.imagens && chamado.imagens.length > 0)) && (
+      {chamado.anexos && chamado.anexos.length > 0 && (
         <ImageModal
           isOpen={imageModalOpen}
           onClose={() => setImageModalOpen(false)}
-          imageName={
-            chamado.imagens && chamado.imagens.length > 0 
-              ? chamado.imagens[selectedImageIndex]?.nome || ""
-              : chamado.imagem?.nome || ""
-          }
-          imageUrl={
-            chamado.imagens && chamado.imagens.length > 0
-              ? chamado.imagens[selectedImageIndex]?.url || ""
-              : chamado.imagem?.url || ""
-          }
-          imageSize={
-            chamado.imagens && chamado.imagens.length > 0
-              ? chamado.imagens[selectedImageIndex]?.tamanho || ""
-              : chamado.imagem?.tamanho || ""
-          }
+          imageName={chamado.anexos[selectedImageIndex]?.nome_original || ""}
+          imageUrl={chamado.anexos[selectedImageIndex]?.arquivo || ""}
+          imageSize={chamado.anexos[selectedImageIndex]?.tamanho_formatado || ""}
         />
       )}
     </div>

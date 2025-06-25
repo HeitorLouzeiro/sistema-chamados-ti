@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Configuração base da API
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
   withCredentials: true, // Para enviar cookies de sessão
   headers: {
     'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ api.interceptors.response.use(
         if (refreshToken) {
           try {
             // Tentar renovar o token
-            const response = await api.post('/api/usuarios/token/refresh/', {
+            const response = await api.post('/usuarios/token/refresh/', {
               refresh: refreshToken
             })
             
@@ -167,7 +167,7 @@ export interface EstatisticasDashboard {
 // Autenticação
 export const authService = {
   async login(username: string, password: string) {
-    const response = await api.post('/api/usuarios/login/', { username, password })
+    const response = await api.post('/usuarios/login/', { username, password })
     
     // Armazenar tokens JWT
     if (response.data.access && response.data.refresh) {
@@ -184,7 +184,7 @@ export const authService = {
   async logout() {
     try {
       // Com JWT stateless, chamada opcional para logs no servidor
-      await api.post('/api/usuarios/logout/')
+      await api.post('/usuarios/logout/')
     } catch (error) {
       // Mesmo se falhar no servidor, não é problema crítico
       console.error('Erro no logout:', error)
@@ -202,7 +202,7 @@ export const authService = {
       throw new Error('Refresh token não encontrado')
     }
     
-    const response = await api.post('/api/usuarios/token/refresh/', {
+    const response = await api.post('/usuarios/token/refresh/', {
       refresh: refreshToken
     })
     
@@ -214,12 +214,12 @@ export const authService = {
   },
 
   async getPerfil(): Promise<Usuario> {
-    const response = await api.get('/api/usuarios/perfil/')
+    const response = await api.get('/usuarios/perfil/')
     return response.data
   },
 
   async atualizarPerfil(dados: Partial<Usuario>): Promise<Usuario> {
-    const response = await api.put('/api/usuarios/perfil/atualizar/', dados)
+    const response = await api.put('/usuarios/perfil/atualizar/', dados)
     return response.data
   },
 }
@@ -227,31 +227,31 @@ export const authService = {
 // Usuários
 export const usuarioService = {
   async listar(params?: any): Promise<{ results: Usuario[], count: number }> {
-    const response = await api.get('/api/usuarios/', { params })
+    const response = await api.get('/usuarios/', { params })
     return response.data
   },
 
   async obter(id: number): Promise<Usuario> {
-    const response = await api.get(`/api/usuarios/${id}/`)
+    const response = await api.get(`/usuarios/${id}/`)
     return response.data
   },
 
   async criar(dados: any): Promise<Usuario> {
-    const response = await api.post('/api/usuarios/', dados)
+    const response = await api.post('/usuarios/', dados)
     return response.data
   },
 
   async atualizar(id: number, dados: Partial<Usuario>): Promise<Usuario> {
-    const response = await api.put(`/api/usuarios/${id}/`, dados)
+    const response = await api.put(`/usuarios/${id}/`, dados)
     return response.data
   },
 
   async deletar(id: number): Promise<void> {
-    await api.delete(`/api/usuarios/${id}/`)
+    await api.delete(`/usuarios/${id}/`)
   },
 
   async listarTecnicos(): Promise<Usuario[]> {
-    const response = await api.get('/api/usuarios/tecnicos/')
+    const response = await api.get('/usuarios/tecnicos/')
     return response.data
   },
 }
@@ -259,41 +259,41 @@ export const usuarioService = {
 // Chamados
 export const chamadoService = {
   async listar(params?: any): Promise<{ results: Chamado[], count: number }> {
-    const response = await api.get('/api/chamados/', { params })
+    const response = await api.get('/chamados/', { params })
     return response.data
   },
 
   async obter(id: number): Promise<Chamado> {
-    const response = await api.get(`/api/chamados/${id}/`)
+    const response = await api.get(`/chamados/${id}/`)
     return response.data
   },
 
   async criar(dados: ChamadoCreate): Promise<Chamado> {
-    const response = await api.post('/api/chamados/', dados)
+    const response = await api.post('/chamados/', dados)
     return response.data
   },
 
   async atualizar(id: number, dados: ChamadoUpdate): Promise<Chamado> {
-    const response = await api.put(`/api/chamados/${id}/`, dados)
+    const response = await api.patch(`/chamados/${id}/`, dados)
     return response.data
   },
 
   async atualizarStatus(id: number, status: string): Promise<Chamado> {
-    const response = await api.patch(`/api/chamados/${id}/status/`, { status })
+    const response = await api.patch(`/chamados/${id}/status/`, { status })
     return response.data
   },
 
   async deletar(id: number): Promise<void> {
-    await api.delete(`/api/chamados/${id}/`)
+    await api.delete(`/chamados/${id}/`)
   },
 
   async meusChamados(params?: any): Promise<Chamado[]> {
-    const response = await api.get('/api/chamados/meus-chamados/', { params })
+    const response = await api.get('/chamados/meus-chamados/', { params })
     return response.data
   },
 
   async chamadosTecnico(params?: any): Promise<Chamado[]> {
-    const response = await api.get('/api/chamados/chamados-tecnico/', { params })
+    const response = await api.get('/chamados/chamados-tecnico/', { params })
     return response.data
   },
 
@@ -301,7 +301,7 @@ export const chamadoService = {
     const formData = new FormData()
     formData.append('arquivo', arquivo)
     
-    const response = await api.post(`/api/chamados/${chamadoId}/anexos/`, formData, {
+    const response = await api.post(`/chamados/${chamadoId}/anexos/`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -310,11 +310,11 @@ export const chamadoService = {
   },
 
   async deletarAnexo(anexoId: number): Promise<void> {
-    await api.delete(`/api/chamados/anexos/${anexoId}/`)
+    await api.delete(`/chamados/anexos/${anexoId}/`)
   },
 
   async obterEstatisticas(): Promise<EstatisticasDashboard> {
-    const response = await api.get('/api/chamados/estatisticas/')
+    const response = await api.get('/chamados/estatisticas/')
     return response.data
   },
 }
@@ -322,7 +322,7 @@ export const chamadoService = {
 // Tipos de Serviço
 export const tipoServicoService = {
   async listar(): Promise<TipoServico[]> {
-    const response = await api.get('/api/chamados/tipos-servico/')
+    const response = await api.get('/chamados/tipos-servico/')
     return response.data
   },
 }
