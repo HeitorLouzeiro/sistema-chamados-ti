@@ -91,6 +91,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setUsuario(null)
       // Os dados locais já são limpos no authService.logout
+      
+      // Redirecionar para login após logout
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login'
+      }
     }
   }
 

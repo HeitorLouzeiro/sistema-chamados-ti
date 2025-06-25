@@ -19,28 +19,39 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/AuthContext"
 
-const data = {
-  user: {
-    name: "UsuarioTest",
-    email: "usuarioTest@example.com",
-    avatar: "/avatars/shadcn.jpg",
+const navMainItems = [
+  {
+    title: "Meus Chamados",
+    url: "/dashboard",
+    icon: ClipboardList,
   },
-  navMain: [
-    {
-      title: "Meus Chamados",
-      url: "/dashboard",
-      icon: ClipboardList,
-    },
-    {
-      title: "Novo Chamado",
-      url: "/cadastrar-chamado",
-      icon: Plus,
-    }
-  ],
-}
+  {
+    title: "Novo Chamado",
+    url: "/cadastrar-chamado",
+    icon: Plus,
+  }
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { usuario } = useAuth()
+
+  // Função para gerar as iniciais do usuário
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  const userData = {
+    name: usuario?.nome_completo || usuario?.username || 'Usuário',
+    email: usuario?.email || 'usuario@example.com',
+    avatar: '/avatars/default.jpg', // Removido campo avatar que não existe no modelo Usuario
+  }
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -61,10 +72,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMainItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   )
