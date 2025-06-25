@@ -29,6 +29,9 @@ class ChamadoFilter(django_filters.FilterSet):
     # Filtro por texto em múltiplos campos
     busca_geral = django_filters.CharFilter(method='filter_busca_geral')
     
+    # Filtro especial para técnicos: chamados abertos OU atribuídos ao técnico
+    tecnico_ou_aberto = django_filters.NumberFilter(method='filter_tecnico_ou_aberto')
+    
     class Meta:
         model = Chamado
         fields = {
@@ -58,6 +61,15 @@ class ChamadoFilter(django_filters.FilterSet):
                 models.Q(descricao__icontains=value) |
                 models.Q(equipamento__icontains=value) |
                 models.Q(localizacao__icontains=value)
+            )
+        return queryset
+
+    def filter_tecnico_ou_aberto(self, queryset, name, value):
+        """Filtra chamados abertos OU atribuídos ao técnico especificado"""
+        if value:
+            return queryset.filter(
+                models.Q(status='aberto') |
+                models.Q(tecnico_responsavel_id=value)
             )
         return queryset
 

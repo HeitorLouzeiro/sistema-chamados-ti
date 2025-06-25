@@ -13,6 +13,8 @@ from .serializers import (
 )
 from .filters import ChamadoFilter
 
+from django.db import models
+
 
 class TipoServicoListView(generics.ListAPIView):
     """View para listar tipos de serviço"""
@@ -251,11 +253,13 @@ def estatisticas_dashboard(request):
     
     # Estatísticas do usuário
     if request.user.tipo_usuario == 'tecnico':
-        meus_chamados_count = Chamado.objects.filter(
-            tecnico_responsavel=request.user
-        ).count()
-        meus_chamados_pendentes = Chamado.objects.filter(
-            tecnico_responsavel=request.user,
+        # Para técnicos, contar chamados abertos OU atribuídos a eles
+        
+        meus_chamados_queryset = Chamado.objects.filter(
+            models.Q(status='aberto') | models.Q(tecnico_responsavel=request.user)
+        )
+        meus_chamados_count = meus_chamados_queryset.count()
+        meus_chamados_pendentes = meus_chamados_queryset.filter(
             status__in=['aberto', 'em_atendimento']
         ).count()
     else:

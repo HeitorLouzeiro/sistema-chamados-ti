@@ -43,8 +43,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     carregarEstatisticas()
-    carregarChamados()
   }, [])
+
+  useEffect(() => {
+    if (usuario) {
+      carregarChamados()
+    }
+  }, [usuario])
 
   const carregarEstatisticas = async () => {
     try {
@@ -59,10 +64,21 @@ export default function DashboardPage() {
 
   const carregarChamados = async () => {
     try {
-      const response = await chamadoService.listar({ 
+      // Construir filtros baseados no tipo de usuário
+      const filtros: Record<string, any> = {
         ordering: '-criado_em',
-        page_size: 10 
-      })
+        page_size: 10
+      }
+
+      // Aplicar filtro específico baseado no tipo de usuário
+      if (usuario?.tipo_usuario === 'usuario') {
+        filtros.solicitante = usuario.id
+      } else if (usuario?.tipo_usuario === 'tecnico') {
+        filtros.tecnico_ou_aberto = usuario.id
+      }
+      // Admin não precisa de filtros (vê todos os chamados)
+
+      const response = await chamadoService.listar(filtros)
       setChamados(response.results)
     } catch (error) {
       console.error("Erro ao carregar chamados:", error)
@@ -115,41 +131,43 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Estatísticas */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {carregandoEstatisticas ? (
-              [...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-32" />
-              ))
-            ) : (
-              <>
-                <StatsCard
-                  title="Total de Chamados"
-                  value={estatisticas?.total_chamados || 0}
-                  description="Todos os chamados cadastrados"
-                  icon={<Ticket className="h-4 w-4 text-muted-foreground" />}
-                />
-                <StatsCard
-                  title="Chamados Abertos"
-                  value={estatisticas?.chamados_abertos || 0}
-                  description="Aguardando atendimento"
-                  icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-                />
-                <StatsCard
-                  title="Em Atendimento"
-                  value={estatisticas?.chamados_em_atendimento || 0}
-                  description="Sendo resolvidos pelos técnicos"
-                  icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-                />
-                <StatsCard
-                  title="Encerrados"
-                  value={estatisticas?.chamados_encerrados || 0}
-                  description="Concluídos com sucesso"
-                  icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-                />
-              </>
-            )}
-          </div>
+          {/* Estatísticas - apenas para técnicos e administradores */}
+          {(usuario?.tipo_usuario === 'admin') && (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {carregandoEstatisticas ? (
+                [...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-32" />
+                ))
+              ) : (
+                <>
+                  <StatsCard
+                    title="Total de Chamados"
+                    value={estatisticas?.total_chamados || 0}
+                    description="Todos os chamados cadastrados"
+                    icon={<Ticket className="h-4 w-4 text-muted-foreground" />}
+                  />
+                  <StatsCard
+                    title="Chamados Abertos"
+                    value={estatisticas?.chamados_abertos || 0}
+                    description="Aguardando atendimento"
+                    icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+                  />
+                  <StatsCard
+                    title="Em Atendimento"
+                    value={estatisticas?.chamados_em_atendimento || 0}
+                    description="Sendo resolvidos pelos técnicos"
+                    icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+                  />
+                  <StatsCard
+                    title="Encerrados"
+                    value={estatisticas?.chamados_encerrados || 0}
+                    description="Concluídos com sucesso"
+                    icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+                  />
+                </>
+              )}
+            </div>
+          )}
 
           {/* Estatísticas do usuário */}
           {(usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'usuario') && (
@@ -165,7 +183,7 @@ export default function DashboardPage() {
                     value={estatisticas?.meus_chamados || 0}
                     description={
                       usuario?.tipo_usuario === 'tecnico' 
-                        ? "Chamados atribuídos a você"
+                        ? "Chamados disponíveis e atribuídos a você"
                         : "Chamados criados por você"
                     }
                     icon={<Ticket className="h-4 w-4 text-muted-foreground" />}
@@ -173,7 +191,11 @@ export default function DashboardPage() {
                   <StatsCard
                     title="Pendentes"
                     value={estatisticas?.meus_chamados_pendentes || 0}
-                    description="Seus chamados pendentes"
+                    description={
+                      usuario?.tipo_usuario === 'tecnico'
+                        ? "Chamados abertos e seus em andamento"
+                        : "Seus chamados pendentes"
+                    }
                     icon={<Clock className="h-4 w-4 text-muted-foreground" />}
                   />
                 </>
@@ -186,7 +208,12 @@ export default function DashboardPage() {
             <div className="flex flex-col space-y-1.5 p-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                  Chamados Recentes
+                  {usuario?.tipo_usuario === 'usuario' 
+                    ? 'Meus Chamados Recentes' 
+                    : usuario?.tipo_usuario === 'tecnico'
+                    ? 'Chamados Disponíveis e Meus'
+                    : 'Chamados Recentes'
+                  }
                 </h3>
                 <Button asChild size="sm">
                   <Link href="/cadastrar-chamado">
@@ -196,7 +223,12 @@ export default function DashboardPage() {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Últimos chamados cadastrados no sistema
+                {usuario?.tipo_usuario === 'usuario' 
+                  ? 'Chamados que você criou'
+                  : usuario?.tipo_usuario === 'tecnico'
+                  ? 'Chamados abertos para assumir e seus chamados em andamento'
+                  : 'Últimos chamados cadastrados no sistema'
+                }
               </p>
             </div>
             <div className="p-6 pt-0">
