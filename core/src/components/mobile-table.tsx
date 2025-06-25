@@ -1,7 +1,7 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { type Chamado } from "@/components/columns"
+import { type Chamado } from "@/lib/api"
 
 interface MobileTableProps {
   data: Chamado[]
@@ -46,7 +46,7 @@ export function MobileTable({ data, onRowClick }: MobileTableProps) {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="text-xs text-muted-foreground mb-1">
-                {chamado.atualizadoEm}
+                {new Date(chamado.atualizado_em).toLocaleString()}
               </div>
               <h3 className="font-medium text-sm leading-tight">
                 {chamado.titulo}

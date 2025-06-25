@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { LoginForm } from "@/components/login-form-novo"
+import { LoginForm } from "@/components/login-form"
 import { useRedirectIfAuthenticated } from "@/hooks/use-auth-redirect"
 
 export default function LoginPage() {

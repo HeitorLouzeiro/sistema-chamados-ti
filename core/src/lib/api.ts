@@ -49,7 +49,7 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = []
 }
 
-// Função para forçar logout e redirecionamento
+// Função para forçar logout e redirecionamento (sem toast)
 const forceLogout = (message: string = 'Sua sessão expirou.') => {
   if (typeof window !== 'undefined') {
     // Limpar dados locais
@@ -60,21 +60,8 @@ const forceLogout = (message: string = 'Sua sessão expirou.') => {
     // Reset do estado de refresh
     resetRefreshState()
     
-    // Notificar o usuário se não estiver na página de login
-    if (!window.location.pathname.includes('/login')) {
-      toast.error(message, {
-        duration: 4000,
-        icon: '🔒'
-      })
-      
-      // Aguardar um momento para o toast aparecer, depois redirecionar
-      setTimeout(() => {
-        window.location.href = '/login'
-      }, 1500)
-    } else {
-      // Se já estiver na página de login, apenas redirecionar
-      window.location.href = '/login'
-    }
+    // Redirecionar silenciosamente para o login
+    window.location.href = '/login'
   }
 }
 

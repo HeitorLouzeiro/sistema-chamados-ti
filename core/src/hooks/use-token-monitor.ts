@@ -28,36 +28,15 @@ export function useTokenMonitor() {
         const expirationTime = payload.exp
         const timeToExpiry = expirationTime - currentTime
 
-        // Avisar quando restam 30 segundos (para tokens de 1 minuto)
-        if (timeToExpiry <= 30 && timeToExpiry > 0 && !warningShownRef.current) {
-          warningShownRef.current = true
-          
-          toast(
-            `Sua sessão expirará em ${timeToExpiry} segundos. Salve seu trabalho!`,
-            {
-              duration: 8000,
-              icon: '⏰',
-              style: {
-                background: '#f59e0b',
-                color: '#000',
-              },
-            }
-          )
-        }
-
-        // Auto logout quando expirar
+        // Auto logout quando expirar (sem toast)
         if (timeToExpiry <= 0) {
           // Limpar warning para não mostrar novamente
           warningShownRef.current = false
           
-          toast.error('Sua sessão expirou. Você será redirecionado para o login.', {
-            duration: 3000,
-            icon: '🔒'
-          })
-          
+          // Logout silencioso após expiração
           setTimeout(() => {
             logout()
-          }, 1000)
+          }, 100)
         }
       } catch (error) {
         console.error('Erro ao verificar expiração do token:', error)

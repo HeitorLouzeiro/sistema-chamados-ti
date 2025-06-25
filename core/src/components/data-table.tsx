@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { type Chamado } from "@/components/columns"
+import { type Chamado } from "@/lib/api"
 
 import {
   Table,
