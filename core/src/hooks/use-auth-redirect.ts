@@ -53,8 +53,17 @@ export function useRedirectIfAuthenticated(redirectTo: string = '/dashboard') {
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      router.replace(redirectTo)
+    // Aguardar carregamento inicial terminar
+    if (loading) return
+
+    // Se estiver autenticado, aguardar um pouco antes de redirecionar
+    // para dar tempo de processar qualquer erro de login
+    if (isAuthenticated) {
+      const timeoutId = setTimeout(() => {
+        router.replace(redirectTo)
+      }, 500) // Delay de 500ms
+
+      return () => clearTimeout(timeoutId)
     }
   }, [isAuthenticated, loading, redirectTo, router])
 

@@ -26,6 +26,29 @@ api.interceptors.request.use(
   }
 )
 
+// Variável para controlar se já está fazendo refresh
+let isRefreshing = false
+let failedQueue: Array<{ resolve: (value?: any) => void; reject: (reason?: any) => void }> = []
+
+// Função para resetar o estado de refresh
+const resetRefreshState = () => {
+  isRefreshing = false
+  failedQueue = []
+}
+
+// Função para processar a fila de requisições aguardando o refresh
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(token)
+    }
+  })
+  
+  failedQueue = []
+}
+
 // Função para forçar logout e redirecionamento
 const forceLogout = (message: string = 'Sua sessão expirou.') => {
   if (typeof window !== 'undefined') {
@@ -33,6 +56,9 @@ const forceLogout = (message: string = 'Sua sessão expirou.') => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
+    
+    // Reset do estado de refresh
+    resetRefreshState()
     
     // Notificar o usuário se não estiver na página de login
     if (!window.location.pathname.includes('/login')) {
@@ -59,32 +85,61 @@ api.interceptors.response.use(
     const originalRequest = error.config
     
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-      
       if (typeof window !== 'undefined') {
         const refreshToken = localStorage.getItem('refresh_token')
         
-        if (refreshToken) {
-          try {
-            // Tentar renovar o token
-            const response = await api.post('/usuarios/token/refresh/', {
-              refresh: refreshToken
-            })
-            
-            const newAccessToken = response.data.access
-            localStorage.setItem('access_token', newAccessToken)
-            
-            // Retry da requisição original
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-            return api(originalRequest)
-          } catch (refreshError) {
-            // Se falhar no refresh, forçar logout
-            console.error('Erro ao renovar token:', refreshError)
-            forceLogout('Sua sessão expirou. Você será redirecionado para o login.')
-          }
-        } else {
-          // Sem refresh token, forçar logout
+        // Se não há refresh token, forçar logout imediatamente
+        if (!refreshToken) {
           forceLogout('Você precisa fazer login novamente.')
+          return Promise.reject(error)
+        }
+        
+        // Se já está fazendo refresh, adicionar à fila
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject })
+          }).then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return api(originalRequest)
+          }).catch(err => {
+            return Promise.reject(err)
+          })
+        }
+        
+        // Começar processo de refresh
+        isRefreshing = true
+        originalRequest._retry = true
+        
+        try {
+          // Tentar renovar o token
+          const response = await api.post('/usuarios/token/refresh/', {
+            refresh: refreshToken
+          })
+          
+          const newAccessToken = response.data.access
+          localStorage.setItem('access_token', newAccessToken)
+          
+          // Processar fila de requisições pendentes
+          processQueue(null, newAccessToken)
+          
+          // Retry da requisição original
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+          return api(originalRequest)
+        } catch (refreshError: any) {
+          // Se falhar no refresh, processar fila com erro e forçar logout
+          console.error('Erro ao renovar token:', refreshError)
+          processQueue(refreshError, null)
+          
+          // Se o refresh token também expirou (401), forçar logout
+          if (refreshError.response?.status === 401) {
+            forceLogout('Sua sessão expirou. Você será redirecionado para o login.')
+          } else {
+            forceLogout('Erro na autenticação. Você será redirecionado para o login.')
+          }
+          
+          return Promise.reject(refreshError)
+        } finally {
+          isRefreshing = false
         }
       }
     }
@@ -207,16 +262,37 @@ export const authService = {
 
   async logout() {
     try {
-      // Com JWT stateless, chamada opcional para logs no servidor
-      await api.post('/usuarios/logout/')
-    } catch (error) {
-      // Mesmo se falhar no servidor, não é problema crítico
-      console.error('Erro no logout:', error)
+      // Criar instância axios sem interceptors para logout
+      const logoutApi = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      // Adicionar token manualmente se existir
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        logoutApi.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      }
+      
+      // Tentar fazer logout no servidor
+      await logoutApi.post('/usuarios/logout/')
+    } catch (error: any) {
+      // Se o erro for 401 (token expirado), não é problema crítico para logout
+      if (error.response?.status === 401) {
+        console.log('Token já expirado durante logout - isso é normal')
+      } else {
+        console.error('Erro no logout:', error)
+      }
     } finally {
       // Sempre limpar dados locais - isso é o que realmente "faz" o logout
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
+      
+      // Reset do estado de refresh para evitar tentativas desnecessárias
+      resetRefreshState()
     }
   },
 
@@ -353,5 +429,5 @@ export const tipoServicoService = {
 
 export default api
 
-// Exportar a função forceLogout para uso externo se necessário
-export { forceLogout }
+// Exportar a função forceLogout e resetRefreshState para uso externo se necessário
+export { forceLogout, resetRefreshState }
