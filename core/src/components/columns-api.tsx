@@ -14,6 +14,19 @@ import {
 import { useRouter } from "next/navigation"
 import { type Chamado } from "@/lib/api"
 
+// Função para formatação consistente de data
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit'
+  }) + ' ' + date.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 const getStatusVariant = (status: string) => {
   switch (status) {
     case "aberto":
@@ -131,13 +144,7 @@ export const columns: ColumnDef<Chamado>[] = [
     header: "Atualizado em",
     cell: ({ row }) => {
       const data = row.getValue("atualizado_em") as string
-      const dataFormatada = new Date(data).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      const dataFormatada = formatDate(data)
       return <span className="text-sm text-muted-foreground">{dataFormatada}</span>
     },
   },

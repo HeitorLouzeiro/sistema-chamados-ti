@@ -8,6 +8,15 @@ interface MobileTableProps {
   onRowClick?: (chamado: Chamado) => void
 }
 
+const formatDate = (dateString: string) => {
+  // Use consistent formatting to avoid hydration mismatch
+  const date = new Date(dateString)
+  return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })
+}
+
 const getStatusVariant = (status: string) => {
   switch (status) {
     case "aberto":
@@ -46,7 +55,7 @@ export function MobileTable({ data, onRowClick }: MobileTableProps) {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="text-xs text-muted-foreground mb-1">
-                {new Date(chamado.atualizado_em).toLocaleString()}
+                {formatDate(chamado.atualizado_em)}
               </div>
               <h3 className="font-medium text-sm leading-tight">
                 {chamado.titulo}
