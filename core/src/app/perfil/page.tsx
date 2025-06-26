@@ -59,12 +59,17 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true)
   const [editando, setEditando] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const [formData, setFormData] = useState({
     nome_completo: "",
     email: "",
     telefone: "",
     endereco: ""
   })
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     if (usuario) {
@@ -359,7 +364,10 @@ export default function PerfilPage() {
                       </div>
                     ) : (
                       <p className="text-sm py-2 px-3 bg-muted rounded-md">
-                        {displayPhone(perfil.telefone || "") || "Não informado"}
+                        {isClient 
+                          ? (displayPhone(perfil.telefone || "") || "Não informado")
+                          : (perfil.telefone || "Não informado")
+                        }
                       </p>
                     )}
                   </div>
