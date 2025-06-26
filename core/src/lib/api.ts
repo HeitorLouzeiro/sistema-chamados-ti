@@ -385,10 +385,20 @@ export const chamadoService = {
   },
 
   async uploadAnexo(chamadoId: number, arquivo: File): Promise<AnexoChamado> {
+    console.log('uploadAnexo chamado com:', { chamadoId, arquivo: arquivo.name })
+    
+    if (!chamadoId || chamadoId === undefined || isNaN(chamadoId)) {
+      console.error('ID do chamado inválido para upload:', chamadoId)
+      throw new Error(`ID do chamado inválido: ${chamadoId}`)
+    }
+    
     const formData = new FormData()
     formData.append('arquivo', arquivo)
     
-    const response = await api.post(`/chamados/${chamadoId}/anexos/`, formData, {
+    const url = `/chamados/${chamadoId}/anexos/`
+    console.log('URL do upload:', url)
+    
+    const response = await api.post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

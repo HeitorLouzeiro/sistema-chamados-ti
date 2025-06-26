@@ -116,6 +116,15 @@ export function ChamadoForm() {
         throw new Error("Por favor, preencha todos os campos obrigatórios")
       }
 
+      console.log('Dados do formulário:', {
+        titulo: formData.titulo,
+        descricao: formData.descricao,
+        tipo_servico: formData.tipo_servico,
+        prioridade: formData.prioridade,
+        equipamento: formData.equipamento,
+        localizacao: formData.localizacao,
+      })
+
       // Criar o chamado
       const novoChamado = await chamadoService.criar({
         titulo: formData.titulo,
@@ -126,13 +135,39 @@ export function ChamadoForm() {
         localizacao: formData.localizacao || undefined,
       })
 
+      console.log('Resposta completa do chamado criado:', JSON.stringify(novoChamado, null, 2)) // Debug melhorado
+
+      // Verificar se o chamado foi criado com sucesso
+      if (!novoChamado) {
+        console.error('Nenhum chamado retornado')
+        throw new Error("Erro ao criar chamado: Nenhuma resposta do servidor")
+      }
+
+      if (!novoChamado.id) {
+        console.error('ID do chamado não encontrado. Objeto retornado:', novoChamado)
+        throw new Error("Erro ao criar chamado: ID não retornado pelo servidor")
+      }
+
+      const chamadoId = Number(novoChamado.id)
+      if (isNaN(chamadoId) || chamadoId <= 0) {
+        console.error('ID do chamado inválido:', novoChamado.id)
+        throw new Error("Erro ao criar chamado: ID inválido retornado pelo servidor")
+      }
+
+      console.log('ID do chamado validado:', chamadoId)
+
       // Fazer upload dos anexos se houver
       if (formData.anexos.length > 0) {
+        console.log(`Fazendo upload de ${formData.anexos.length} anexos para o chamado ${chamadoId}`)
+        
         for (const anexo of formData.anexos) {
           try {
-            await chamadoService.uploadAnexo(novoChamado.id, anexo)
+            console.log(`Fazendo upload do arquivo: ${anexo.name} para chamado ID: ${chamadoId}`)
+            await chamadoService.uploadAnexo(chamadoId, anexo)
+            console.log(`Upload concluído: ${anexo.name}`)
           } catch (error) {
             console.error("Erro ao fazer upload do anexo:", error)
+            toast.error(`Erro ao fazer upload do arquivo ${anexo.name}`)
             // Não falha a criação do chamado por causa de erro no anexo
           }
         }

@@ -56,6 +56,29 @@ class ChamadoListCreateView(generics.ListCreateAPIView):
             usuario=self.request.user
         )
 
+    def create(self, request, *args, **kwargs):
+        """Sobrescrever create para retornar dados completos"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Criar o chamado
+        chamado = serializer.save(solicitante=request.user)
+        
+        # Criar histórico
+        HistoricoChamado.objects.create(
+            chamado=chamado,
+            tipo_acao='criado',
+            descricao=f'Chamado criado por {request.user.nome_completo}',
+            usuario=request.user
+        )
+        
+        # Retornar dados completos usando o serializer de detalhes
+        response_serializer = ChamadoDetailSerializer(chamado)
+        
+        from rest_framework import status
+        from rest_framework.response import Response
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
 
 class ChamadoDetailView(generics.RetrieveUpdateDestroyAPIView):
     """View para detalhar, atualizar e deletar chamado"""
