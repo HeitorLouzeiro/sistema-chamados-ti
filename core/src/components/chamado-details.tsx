@@ -233,15 +233,10 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   }
 
   // Verificar se o usuário atual pode editar observações
-  // Pode editar se for o técnico responsável OU se for um técnico/admin e não há técnico responsável ainda
-  // MAS NÃO pode editar se o chamado estiver encerrado
-  const podeEditarObservacoes = usuario && chamado?.status !== 'encerrado' && (
-    // É o técnico responsável
-    (chamado?.tecnico_responsavel && 
-     compararIds(chamado.tecnico_responsavel.id, usuario.id)) ||
-    // É um técnico/admin e não há técnico responsável ainda
-    (!chamado?.tecnico_responsavel && (usuario.tipo_usuario === 'tecnico' || usuario.tipo_usuario === 'admin'))
-  )
+  // Pode editar APENAS se o chamado estiver "em atendimento" E se for o técnico responsável
+  const podeEditarObservacoes = usuario && chamado?.status === 'em_atendimento' && 
+    chamado?.tecnico_responsavel && 
+    compararIds(chamado.tecnico_responsavel.id, usuario.id)
   
   // Verificar se o usuário atual é o técnico responsável (para outras funcionalidades)
   const isUsuarioTecnicoResponsavel = usuario && chamado?.tecnico_responsavel && 
@@ -510,7 +505,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                   <Edit className="h-3 w-3" />
                 </Button>
               )}
-              {!podeEditarObservacoes && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && chamado.status !== 'encerrado' && (
+              {!podeEditarObservacoes && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && chamado.status !== 'encerrado' && chamado.status !== 'em_atendimento' && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -567,19 +562,19 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                     O chamado está encerrado e não pode mais ser editado
                   </p>
                 )}
-                {!podeEditarObservacoes && chamado.status !== 'encerrado' && chamado.tecnico_responsavel && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && !isUsuarioTecnicoResponsavel && (
+                {chamado.status === 'aberto' && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && (
                   <p className="text-xs text-muted-foreground mt-2 italic">
-                    Apenas o técnico responsável pode editar as observações
+                    Para editar observações, você deve assumir e iniciar o atendimento do chamado
                   </p>
                 )}
-                {!podeEditarObservacoes && chamado.status !== 'encerrado' && !chamado.tecnico_responsavel && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && (
+                {chamado.status === 'em_atendimento' && chamado.tecnico_responsavel && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && !isUsuarioTecnicoResponsavel && (
                   <p className="text-xs text-muted-foreground mt-2 italic">
-                    Você pode assumir o chamado para editar as observações
+                    Apenas o técnico responsável pelo atendimento pode editar as observações
                   </p>
                 )}
-                {!podeEditarObservacoes && chamado.status !== 'encerrado' && usuario?.tipo_usuario !== 'tecnico' && usuario?.tipo_usuario !== 'admin' && (
+                {usuario?.tipo_usuario !== 'tecnico' && usuario?.tipo_usuario !== 'admin' && (
                   <p className="text-xs text-muted-foreground mt-2 italic">
-                    Apenas técnicos e administradores podem editar as observações
+                    Apenas técnicos e administradores podem editar observações
                   </p>
                 )}
               </div>
