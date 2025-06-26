@@ -29,6 +29,7 @@ import { userService } from "@/lib/api"
 import { User, Mail, Phone, MapPin, Edit, Save, X, Loader2, Lock } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
+import { formatPhone, displayPhone, preparePhoneForBackend, isValidPhone } from "@/lib/phone-utils"
 
 interface PerfilUsuario {
   id: number
@@ -79,7 +80,7 @@ export default function PerfilPage() {
       setFormData({
         nome_completo: dadosPerfil.nome_completo || "",
         email: dadosPerfil.email || "",
-        telefone: dadosPerfil.telefone || "",
+        telefone: displayPhone(dadosPerfil.telefone || ""),
         endereco: dadosPerfil.endereco || ""
       })
     } catch (error) {
@@ -91,16 +92,38 @@ export default function PerfilPage() {
   }
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    if (field === 'telefone') {
+      // Aplicar formatação apenas no campo telefone
+      const formattedPhone = formatPhone(value)
+      setFormData(prev => ({
+        ...prev,
+        [field]: formattedPhone
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }))
+    }
   }
 
   const handleSalvar = async () => {
     try {
       setSalvando(true)
-      const perfilAtualizado = await userService.atualizarPerfil(formData)
+      
+      // Validar telefone se foi preenchido
+      if (formData.telefone && !isValidPhone(formData.telefone)) {
+        toast.error("Telefone deve ter 11 dígitos (DDD + número)")
+        return
+      }
+      
+      // Preparar dados para envio - telefone apenas com números
+      const dadosParaEnvio = {
+        ...formData,
+        telefone: preparePhoneForBackend(formData.telefone)
+      }
+      
+      const perfilAtualizado = await userService.atualizarPerfil(dadosParaEnvio)
       setPerfil(perfilAtualizado)
       setEditando(false)
       
@@ -108,9 +131,17 @@ export default function PerfilPage() {
       atualizarUsuario(perfilAtualizado)
       
       toast.success("Perfil atualizado com sucesso!")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao atualizar perfil:", error)
-      toast.error("Erro ao atualizar perfil")
+      
+      // Tratar erro específico de telefone
+      if (error?.response?.data?.telefone) {
+        toast.error(error.response.data.telefone[0] || "Telefone inválido")
+      } else if (error?.response?.data?.detail) {
+        toast.error(error.response.data.detail)
+      } else {
+        toast.error("Erro ao atualizar perfil")
+      }
     } finally {
       setSalvando(false)
     }
@@ -121,7 +152,7 @@ export default function PerfilPage() {
       setFormData({
         nome_completo: perfil.nome_completo || "",
         email: perfil.email || "",
-        telefone: perfil.telefone || "",
+        telefone: displayPhone(perfil.telefone || ""),
         endereco: perfil.endereco || ""
       })
     }
@@ -304,15 +335,31 @@ export default function PerfilPage() {
                   <div className="space-y-2">
                     <Label htmlFor="telefone">Telefone</Label>
                     {editando ? (
-                      <Input
-                        id="telefone"
-                        value={formData.telefone}
-                        onChange={(e) => handleInputChange("telefone", e.target.value)}
-                        placeholder="Digite seu telefone"
-                      />
+                      <div className="space-y-1">
+                        <Input
+                          id="telefone"
+                          value={formData.telefone}
+                          onChange={(e) => handleInputChange("telefone", e.target.value)}
+                          placeholder="(00) 9 0000-0000"
+                          className={
+                            formData.telefone && !isValidPhone(formData.telefone)
+                              ? "border-red-500 focus:border-red-500"
+                              : ""
+                          }
+                        />
+                        {formData.telefone && !isValidPhone(formData.telefone) ? (
+                          <p className="text-sm text-red-500 font-medium">
+                            Número inválido, digite os 11 dígitos corretamente.
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            Digite o telefone com DDD. Exemplo: (89) 9 9905-4536
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-sm py-2 px-3 bg-muted rounded-md">
-                        {perfil.telefone || "Não informado"}
+                        {displayPhone(perfil.telefone || "") || "Não informado"}
                       </p>
                     )}
                   </div>
@@ -340,7 +387,10 @@ export default function PerfilPage() {
                     <>
                       <Button 
                         onClick={handleSalvar}
-                        disabled={salvando}
+                        disabled={
+                          salvando || 
+                          Boolean(formData.telefone && !isValidPhone(formData.telefone))
+                        }
                         className="gap-2"
                       >
                         {salvando ? (

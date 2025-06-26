@@ -1,3 +1,5 @@
+import re
+
 from chamados.filters import UsuarioFilter
 from django.contrib.auth import authenticate
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,6 +11,18 @@ from rest_framework.response import Response
 from .models import Usuario
 from .serializers import (TecnicoSerializer, UsuarioCreateSerializer,
                           UsuarioListSerializer, UsuarioSerializer)
+
+
+def is_valid_phone(phone):
+    """Valida se o telefone tem exatamente 11 dígitos"""
+    if not phone:
+        return True  # Telefone é opcional
+
+    # Remove todos os caracteres não numéricos
+    digits_only = re.sub(r'\D', '', phone)
+
+    # Verifica se tem exatamente 11 dígitos
+    return len(digits_only) == 11
 
 
 class UsuarioListCreateView(generics.ListCreateAPIView):
@@ -57,6 +71,16 @@ def usuario_perfil(request):
 
     elif request.method == 'PATCH':
         usuario = request.user
+
+        # Validar telefone se fornecido
+        telefone = request.data.get('telefone')
+        if telefone is not None and not is_valid_phone(telefone):
+            return Response(
+                {'telefone': [
+                    'Telefone deve ter exatamente 11 dígitos (DDD + número)']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         serializer = UsuarioSerializer(
             usuario, data=request.data, partial=True
         )
