@@ -12,21 +12,16 @@ export const formatPhone = (phone: string): string => {
   // Remove formatação existente
   const cleaned = removePhoneFormatting(phone)
   
-  // Aplica a formatação baseada no tamanho
-  if (cleaned.length === 0) {
-    return ''
-  } else if (cleaned.length <= 2) {
-    return `(${cleaned}`
-  } else if (cleaned.length <= 3) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`
-  } else if (cleaned.length <= 7) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 3)} ${cleaned.slice(3)}`
-  } else if (cleaned.length <= 11) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 3)} ${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`
-  } else {
-    // Limita a 11 dígitos
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 3)} ${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`
-  }
+// Usa regex para formatar conforme o padrão brasileiro (XX) X XXXX-XXXX
+const match = cleaned.match(/^(\d{0,2})(\d{0,1})(\d{0,4})(\d{0,4})$/)
+if (!match) return ''
+let result = ''
+if (match[1]) result += `(${match[1]}`
+if (match[1] && match[1].length === 2) result += ')'
+if (match[2]) result += ` ${match[2]}`
+if (match[3]) result += ` ${match[3]}`
+if (match[4]) result += `-${match[4]}`
+return result.trim()
 }
 
 // Valida se o telefone tem exatamente 11 dígitos
