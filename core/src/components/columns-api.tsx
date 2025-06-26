@@ -69,55 +69,10 @@ function ActionsCell({ chamado }: { chamado: Chamado }) {
     return id1 == id2 || String(id1) === String(id2)
   }
 
-  const handleEncerrarChamado = async () => {
-    if (!usuario || !chamado) return
-
-    const toastId = toast.loading("Encerrando chamado...")
-
-    try {
-      await chamadoService.atualizarStatus(chamado.id, "encerrado")
-      toast.success("Chamado encerrado com sucesso!", { id: toastId })
-      
-      // Recarregar a página para atualizar a lista
-      window.location.reload()
-    } catch (error) {
-      console.error('Erro ao encerrar chamado:', error)
-      toast.error("Erro ao encerrar o chamado", { id: toastId })
-    }
-  }
-
-  // Verificar se o usuário pode encerrar o chamado
-  const podeEncerrar = usuario && chamado.status !== "encerrado" && (
-    usuario.tipo_usuario === 'tecnico' || 
-    usuario.tipo_usuario === 'admin' || 
-    compararIds(usuario.id, chamado.solicitante?.id)
-  )
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Abrir menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => router.push(`/chamado/${chamado.id}`)}>
-          <Eye className="mr-2 h-4 w-4" />
-          Visualizar
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(`/editar-chamado/${chamado.id}`)}>
-          <Edit className="mr-2 h-4 w-4" />
-          Editar
-        </DropdownMenuItem>
-        {podeEncerrar && (
-          <DropdownMenuItem onClick={handleEncerrarChamado} className="text-green-600">
-            <CheckCircle className="mr-2 h-4 w-4" />
-            Encerrar Chamado
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button variant="ghost" className="h-8 w-8 p-0">
+      <Eye className="h-4 w-4" />
+    </Button>
   )
 }
 
