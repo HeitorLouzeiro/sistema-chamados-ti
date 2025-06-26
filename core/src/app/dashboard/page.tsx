@@ -121,14 +121,6 @@ export default function DashboardPage() {
                 Bem-vindo, {usuario?.nome_completo}!
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button asChild>
-                <Link href="/cadastrar-chamado">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo Chamado
-                </Link>
-              </Button>
-            </div>
           </div>
 
           {/* Estatísticas - apenas para técnicos e administradores */}
@@ -215,12 +207,6 @@ export default function DashboardPage() {
                     : 'Chamados Recentes'
                   }
                 </h3>
-                <Button asChild size="sm">
-                  <Link href="/cadastrar-chamado">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Chamado
-                  </Link>
-                </Button>
               </div>
               <p className="text-sm text-muted-foreground">
                 {usuario?.tipo_usuario === 'usuario' 
