@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   ChevronsUpDown,
   LogOut,
@@ -107,9 +108,11 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer">
-                <User />
-                Perfil
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/perfil" className="flex items-center gap-2 w-full">
+                  <User className="size-4" />
+                  Perfil
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

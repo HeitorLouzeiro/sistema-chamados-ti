@@ -414,6 +414,32 @@ export const tipoServicoService = {
   },
 }
 
+// Serviço de Usuário (Perfil)
+export const userService = {
+  async obterPerfil(): Promise<any> {
+    const response = await api.get('/usuarios/perfil/')
+    return response.data
+  },
+
+  async atualizarPerfil(dados: {
+    nome_completo: string
+    email: string
+    telefone?: string
+    endereco?: string
+  }): Promise<any> {
+    const response = await api.patch('/usuarios/perfil/', dados)
+    return response.data
+  },
+
+  async alterarSenha(dados: {
+    senha_atual: string
+    nova_senha: string
+    confirmar_senha: string
+  }): Promise<void> {
+    await api.post('/usuarios/alterar-senha/', dados)
+  },
+}
+
 export default api
 
 // Exportar a função forceLogout e resetRefreshState para uso externo se necessário
