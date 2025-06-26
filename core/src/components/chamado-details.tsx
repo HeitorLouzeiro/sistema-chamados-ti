@@ -12,6 +12,7 @@ import { ArrowLeft, Calendar, User, MapPin, Monitor, FileText, Image as ImageIco
 import { ImageModal } from "@/components/image-modal"
 import { chamadoService, type Chamado } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
+import { buildFileUrl, isImageFile } from "@/lib/file-utils"
 import toast from "react-hot-toast"
 
 interface ChamadoDetailsProps {
@@ -423,22 +424,48 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {chamado.anexos.map((anexo, index) => (
-                <div 
-                  key={anexo.id}
-                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleImageClick(index)}
-                >
-                  <div className="flex-shrink-0">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+              {chamado.anexos.map((anexo, index) => {
+                // Verificar se é uma imagem
+                const isImage = isImageFile(anexo.tipo_arquivo || '')
+                // Construir URL completa para o arquivo
+                const fileUrl = buildFileUrl(anexo.arquivo)
+                
+                return (
+                  <div 
+                    key={anexo.id}
+                    className="flex flex-col gap-2 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleImageClick(index)}
+                  >
+                    <div className="flex-shrink-0 flex justify-center">
+                      {isImage ? (
+                        <img 
+                          src={fileUrl}
+                          alt={anexo.nome_original}
+                          className="h-20 w-20 object-cover rounded"
+                          onError={(e) => {
+                            // Se a imagem não carregar, mostrar ícone
+                            e.currentTarget.style.display = 'none'
+                            const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                            if (nextElement) {
+                              nextElement.style.display = 'block'
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <ImageIcon 
+                        className={`h-8 w-8 text-muted-foreground ${isImage ? 'hidden' : ''}`} 
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 text-center">
+                      <p className="text-sm font-medium truncate">{anexo.nome_original}</p>
+                      <p className="text-xs text-muted-foreground">{anexo.tamanho_formatado}</p>
+                    </div>
+                    <div className="flex justify-center">
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{anexo.nome_original}</p>
-                    <p className="text-xs text-muted-foreground">{anexo.tamanho_formatado}</p>
-                  </div>
-                  <Download className="h-4 w-4 text-muted-foreground" />
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -623,7 +650,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       </div>
 
       {/* Modal de Imagem */}
-      {chamado.anexos && chamado.anexos.length > 0 && (
+      {chamado.anexos && chamado.anexos.length > 0 && selectedImageIndex !== null && (
         <ImageModal
           isOpen={imageModalOpen}
           onClose={() => setImageModalOpen(false)}

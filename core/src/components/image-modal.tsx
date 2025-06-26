@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { X, Download, ZoomIn, ZoomOut } from "lucide-react"
+import { buildFileUrl } from "@/lib/file-utils"
 
 interface ImageModalProps {
   isOpen: boolean
@@ -41,7 +42,14 @@ export function ImageModal({ isOpen, onClose, imageName, imageUrl, imageSize }: 
               <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 200}>
                 <ZoomIn className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  const url = buildFileUrl(imageUrl)
+                  window.open(url, '_blank')
+                }}
+              >
                 <Download className="h-4 w-4" />
                 Baixar
               </Button>
@@ -54,9 +62,30 @@ export function ImageModal({ isOpen, onClose, imageName, imageUrl, imageSize }: 
         
         <div className="flex-1 overflow-auto p-4">
           <div className="flex items-center justify-center min-h-full">
-            {/* Imagem simulada - em produção seria uma <img> real */}
+            {/* Verificar se é uma URL válida de imagem */}
+            {imageUrl ? (
+              <img 
+                src={buildFileUrl(imageUrl)}
+                alt={imageName}
+                className="max-w-full max-h-full object-contain rounded-lg shadow-lg transition-transform duration-200"
+                style={{ 
+                  transform: `scale(${zoom / 100})`
+                }}
+                onError={(e) => {
+                  console.error('Erro ao carregar imagem:', imageUrl)
+                  // Se a imagem não carregar, mostrar placeholder
+                  e.currentTarget.style.display = 'none'
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                  if (nextElement) {
+                    nextElement.style.display = 'flex'
+                  }
+                }}
+              />
+            ) : null}
+            
+            {/* Fallback para quando a imagem não carrega */}
             <div 
-              className="border rounded-lg shadow-lg bg-white transition-transform duration-200"
+              className="border rounded-lg shadow-lg bg-white transition-transform duration-200 hidden"
               style={{ 
                 transform: `scale(${zoom / 100})`,
                 maxWidth: '100%',
@@ -71,10 +100,10 @@ export function ImageModal({ isOpen, onClose, imageName, imageUrl, imageSize }: 
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-medium text-blue-900">Preview da Imagem</h3>
+                    <h3 className="font-medium text-blue-900">Erro ao carregar imagem</h3>
                     <p className="text-sm text-blue-700">{imageName}</p>
                     <p className="text-xs text-blue-600 mt-1">
-                      Em produção, aqui seria exibida a imagem real
+                      Não foi possível exibir a imagem
                     </p>
                   </div>
                 </div>

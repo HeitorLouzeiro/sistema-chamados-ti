@@ -60,10 +60,10 @@ class ChamadoListCreateView(generics.ListCreateAPIView):
         """Sobrescrever create para retornar dados completos"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         # Criar o chamado
         chamado = serializer.save(solicitante=request.user)
-        
+
         # Criar histórico
         HistoricoChamado.objects.create(
             chamado=chamado,
@@ -71,10 +71,10 @@ class ChamadoListCreateView(generics.ListCreateAPIView):
             descricao=f'Chamado criado por {request.user.nome_completo}',
             usuario=request.user
         )
-        
+
         # Retornar dados completos usando o serializer de detalhes
         response_serializer = ChamadoDetailSerializer(chamado)
-        
+
         from rest_framework import status
         from rest_framework.response import Response
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -259,7 +259,7 @@ def upload_anexo(request, chamado_id):
         )
 
         return Response(
-            AnexoChamadoSerializer(anexo).data,
+            AnexoChamadoSerializer(anexo, context={'request': request}).data,
             status=status.HTTP_201_CREATED
         )
 

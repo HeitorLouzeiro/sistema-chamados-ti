@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from .models import TipoServico, Chamado, AnexoChamado, HistoricoChamado
-from usuarios.serializers import UsuarioListSerializer, TecnicoSerializer
+from usuarios.serializers import TecnicoSerializer, UsuarioListSerializer
+
+from .models import AnexoChamado, Chamado, HistoricoChamado, TipoServico
 
 
 class TipoServicoSerializer(serializers.ModelSerializer):
     """Serializer para TipoServico"""
-    
+
     class Meta:
         model = TipoServico
         fields = ['id', 'nome', 'descricao', 'ativo']
@@ -13,10 +14,11 @@ class TipoServicoSerializer(serializers.ModelSerializer):
 
 class AnexoChamadoSerializer(serializers.ModelSerializer):
     """Serializer para AnexoChamado"""
-    
+
     tamanho_formatado = serializers.ReadOnlyField()
     enviado_por = UsuarioListSerializer(read_only=True)
-    
+    arquivo = serializers.SerializerMethodField()
+
     class Meta:
         model = AnexoChamado
         fields = [
@@ -25,13 +27,23 @@ class AnexoChamadoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'tamanho', 'tipo_arquivo', 'criado_em']
 
+    def get_arquivo(self, obj):
+        """Retorna a URL completa do arquivo"""
+        if obj.arquivo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.arquivo.url)
+            return obj.arquivo.url
+        return None
+
 
 class HistoricoChamadoSerializer(serializers.ModelSerializer):
     """Serializer para HistoricoChamado"""
-    
+
     usuario = UsuarioListSerializer(read_only=True)
-    tipo_acao_display = serializers.CharField(source='get_tipo_acao_display', read_only=True)
-    
+    tipo_acao_display = serializers.CharField(
+        source='get_tipo_acao_display', read_only=True)
+
     class Meta:
         model = HistoricoChamado
         fields = [
@@ -43,13 +55,17 @@ class HistoricoChamadoSerializer(serializers.ModelSerializer):
 
 class ChamadoListSerializer(serializers.ModelSerializer):
     """Serializer para listagem de chamados"""
-    
-    tipo_servico_nome = serializers.CharField(source='tipo_servico.nome', read_only=True)
-    solicitante_nome = serializers.CharField(source='solicitante.nome_completo', read_only=True)
+
+    tipo_servico_nome = serializers.CharField(
+        source='tipo_servico.nome', read_only=True)
+    solicitante_nome = serializers.CharField(
+        source='solicitante.nome_completo', read_only=True)
     tecnico_responsavel = TecnicoSerializer(read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True)
-    
+    status_display = serializers.CharField(
+        source='get_status_display', read_only=True)
+    prioridade_display = serializers.CharField(
+        source='get_prioridade_display', read_only=True)
+
     class Meta:
         model = Chamado
         fields = [
@@ -61,15 +77,17 @@ class ChamadoListSerializer(serializers.ModelSerializer):
 
 class ChamadoDetailSerializer(serializers.ModelSerializer):
     """Serializer detalhado para chamados"""
-    
+
     tipo_servico = TipoServicoSerializer(read_only=True)
     solicitante = UsuarioListSerializer(read_only=True)
     tecnico_responsavel = TecnicoSerializer(read_only=True)
     anexos = AnexoChamadoSerializer(many=True, read_only=True)
     historico = HistoricoChamadoSerializer(many=True, read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    prioridade_display = serializers.CharField(source='get_prioridade_display', read_only=True)
-    
+    status_display = serializers.CharField(
+        source='get_status_display', read_only=True)
+    prioridade_display = serializers.CharField(
+        source='get_prioridade_display', read_only=True)
+
     class Meta:
         model = Chamado
         fields = [
@@ -83,14 +101,14 @@ class ChamadoDetailSerializer(serializers.ModelSerializer):
 
 class ChamadoCreateSerializer(serializers.ModelSerializer):
     """Serializer para criação de chamados"""
-    
+
     class Meta:
         model = Chamado
         fields = [
             'titulo', 'descricao', 'tipo_servico', 'prioridade',
             'equipamento', 'localizacao'
         ]
-    
+
     def create(self, validated_data):
         # O solicitante será definido automaticamente na view
         return super().create(validated_data)
@@ -98,24 +116,25 @@ class ChamadoCreateSerializer(serializers.ModelSerializer):
 
 class ChamadoUpdateSerializer(serializers.ModelSerializer):
     """Serializer para atualização de chamados"""
-    
+
     class Meta:
         model = Chamado
         fields = [
             'titulo', 'descricao', 'tipo_servico', 'status', 'prioridade',
             'equipamento', 'localizacao', 'tecnico_responsavel', 'observacoes_tecnico'
         ]
-    
+
     def validate_tecnico_responsavel(self, value):
         """Valida se o usuário é realmente um técnico"""
         if value and value.tipo_usuario != 'tecnico':
-            raise serializers.ValidationError("O usuário selecionado não é um técnico.")
+            raise serializers.ValidationError(
+                "O usuário selecionado não é um técnico.")
         return value
 
 
 class ChamadoStatusUpdateSerializer(serializers.ModelSerializer):
     """Serializer para atualização apenas do status"""
-    
+
     class Meta:
         model = Chamado
         fields = ['status', 'observacoes_tecnico']
@@ -123,11 +142,11 @@ class ChamadoStatusUpdateSerializer(serializers.ModelSerializer):
 
 class AnexoChamadoUploadSerializer(serializers.ModelSerializer):
     """Serializer para upload de anexos"""
-    
+
     class Meta:
         model = AnexoChamado
         fields = ['arquivo']
-    
+
     def create(self, validated_data):
         arquivo = validated_data['arquivo']
         validated_data['nome_original'] = arquivo.name
