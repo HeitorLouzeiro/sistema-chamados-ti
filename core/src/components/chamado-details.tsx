@@ -108,7 +108,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
 
     try {
       // Se está iniciando o atendimento e não há técnico responsável, atribuir o usuário atual
-      if (novoStatus === "em_atendimento" && !chamado.tecnico_responsavel && usuario.tipo_usuario === 'tecnico') {
+      if (novoStatus === "em_atendimento" && !chamado.tecnico_responsavel && (usuario.tipo_usuario === 'tecnico' || usuario.tipo_usuario === 'admin')) {
         // Atualizar o chamado com o técnico responsável e o status
         await chamadoService.atualizar(chamado.id, {
           status: novoStatus,
@@ -233,14 +233,14 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   }
 
   // Verificar se o usuário atual pode editar observações
-  // Pode editar se for o técnico responsável OU se for um técnico e não há técnico responsável ainda
+  // Pode editar se for o técnico responsável OU se for um técnico/admin e não há técnico responsável ainda
   // MAS NÃO pode editar se o chamado estiver encerrado
   const podeEditarObservacoes = usuario && chamado?.status !== 'encerrado' && (
     // É o técnico responsável
     (chamado?.tecnico_responsavel && 
      compararIds(chamado.tecnico_responsavel.id, usuario.id)) ||
-    // É um técnico e não há técnico responsável ainda
-    (!chamado?.tecnico_responsavel && usuario.tipo_usuario === 'tecnico')
+    // É um técnico/admin e não há técnico responsável ainda
+    (!chamado?.tecnico_responsavel && (usuario.tipo_usuario === 'tecnico' || usuario.tipo_usuario === 'admin'))
   )
   
   // Verificar se o usuário atual é o técnico responsável (para outras funcionalidades)
@@ -510,7 +510,7 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                   <Edit className="h-3 w-3" />
                 </Button>
               )}
-              {!podeEditarObservacoes && usuario?.tipo_usuario === 'tecnico' && chamado.status !== 'encerrado' && (
+              {!podeEditarObservacoes && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && chamado.status !== 'encerrado' && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -567,19 +567,19 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
                     O chamado está encerrado e não pode mais ser editado
                   </p>
                 )}
-                {!podeEditarObservacoes && chamado.status !== 'encerrado' && chamado.tecnico_responsavel && usuario?.tipo_usuario === 'tecnico' && !isUsuarioTecnicoResponsavel && (
+                {!podeEditarObservacoes && chamado.status !== 'encerrado' && chamado.tecnico_responsavel && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && !isUsuarioTecnicoResponsavel && (
                   <p className="text-xs text-muted-foreground mt-2 italic">
                     Apenas o técnico responsável pode editar as observações
                   </p>
                 )}
-                {!podeEditarObservacoes && chamado.status !== 'encerrado' && !chamado.tecnico_responsavel && usuario?.tipo_usuario === 'tecnico' && (
+                {!podeEditarObservacoes && chamado.status !== 'encerrado' && !chamado.tecnico_responsavel && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && (
                   <p className="text-xs text-muted-foreground mt-2 italic">
                     Você pode assumir o chamado para editar as observações
                   </p>
                 )}
-                {!podeEditarObservacoes && chamado.status !== 'encerrado' && usuario?.tipo_usuario !== 'tecnico' && (
+                {!podeEditarObservacoes && chamado.status !== 'encerrado' && usuario?.tipo_usuario !== 'tecnico' && usuario?.tipo_usuario !== 'admin' && (
                   <p className="text-xs text-muted-foreground mt-2 italic">
-                    Apenas técnicos podem editar as observações
+                    Apenas técnicos e administradores podem editar as observações
                   </p>
                 )}
               </div>
@@ -592,19 +592,24 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       <div className="flex flex-wrap gap-3">
         {chamado.status !== "encerrado" && (
           <>
+            {/* Botão de encerrar - permitir para solicitante, técnico ou admin */}
             <Button 
               variant="outline" 
               onClick={() => handleStatusUpdate("encerrado")}
-              disabled={!usuario || (usuario.tipo_usuario !== 'tecnico' && usuario.tipo_usuario !== 'admin')}
+              disabled={!usuario || (
+                usuario.tipo_usuario !== 'tecnico' && 
+                usuario.tipo_usuario !== 'admin' && 
+                !compararIds(usuario.id, chamado.solicitante?.id)
+              )}
             >
               Encerrar Chamado
             </Button>
             
-            {chamado.status === "aberto" && (
+            {/* Botão de iniciar atendimento - apenas para técnicos e administradores */}
+            {chamado.status === "aberto" && (usuario?.tipo_usuario === 'tecnico' || usuario?.tipo_usuario === 'admin') && (
               <Button 
                 variant="default" 
                 onClick={() => handleStatusUpdate("em_atendimento")}
-                disabled={!usuario || usuario.tipo_usuario !== 'tecnico'}
               >
                 {!chamado.tecnico_responsavel ? 'Assumir e Iniciar Atendimento' : 'Iniciar Atendimento'}
               </Button>
@@ -612,11 +617,13 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
           </>
         )}
         
-        {/* Indicação de permissões */}
-        {usuario && usuario.tipo_usuario !== 'tecnico' && usuario.tipo_usuario !== 'admin' && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Apenas técnicos podem iniciar o atendimento de chamados
-          </p>
+        {/* Indicações de permissões */}
+        {usuario && (
+          <div className="text-sm text-muted-foreground space-y-1">
+            {usuario.tipo_usuario !== 'tecnico' && usuario.tipo_usuario !== 'admin' && !compararIds(usuario.id, chamado.solicitante?.id) && (
+              <p>Apenas o solicitante, técnicos ou administradores podem encerrar chamados</p>
+            )}
+          </div>
         )}
       </div>
 

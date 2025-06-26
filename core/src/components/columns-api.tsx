@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Eye, Edit, MoreHorizontal } from "lucide-react"
+import { Eye, Edit, MoreHorizontal, CheckCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
-import { type Chamado } from "@/lib/api"
+import { type Chamado, chamadoService } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
+import toast from "react-hot-toast"
 
 // Função para formatação consistente de data
 const formatDate = (dateString: string) => {
@@ -59,6 +61,37 @@ const getStatusLabel = (status: string) => {
 
 function ActionsCell({ chamado }: { chamado: Chamado }) {
   const router = useRouter()
+  const { usuario } = useAuth()
+
+  // Função auxiliar para comparar IDs de forma segura
+  const compararIds = (id1: any, id2: any): boolean => {
+    if (!id1 || !id2) return false
+    return id1 == id2 || String(id1) === String(id2)
+  }
+
+  const handleEncerrarChamado = async () => {
+    if (!usuario || !chamado) return
+
+    const toastId = toast.loading("Encerrando chamado...")
+
+    try {
+      await chamadoService.atualizarStatus(chamado.id, "encerrado")
+      toast.success("Chamado encerrado com sucesso!", { id: toastId })
+      
+      // Recarregar a página para atualizar a lista
+      window.location.reload()
+    } catch (error) {
+      console.error('Erro ao encerrar chamado:', error)
+      toast.error("Erro ao encerrar o chamado", { id: toastId })
+    }
+  }
+
+  // Verificar se o usuário pode encerrar o chamado
+  const podeEncerrar = usuario && chamado.status !== "encerrado" && (
+    usuario.tipo_usuario === 'tecnico' || 
+    usuario.tipo_usuario === 'admin' || 
+    compararIds(usuario.id, chamado.solicitante?.id)
+  )
 
   return (
     <DropdownMenu>
@@ -77,6 +110,12 @@ function ActionsCell({ chamado }: { chamado: Chamado }) {
           <Edit className="mr-2 h-4 w-4" />
           Editar
         </DropdownMenuItem>
+        {podeEncerrar && (
+          <DropdownMenuItem onClick={handleEncerrarChamado} className="text-green-600">
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Encerrar Chamado
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
