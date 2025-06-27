@@ -50,16 +50,12 @@ export default function PerfilPage() {
   const { usuario, atualizarUsuario } = useAuth()
   const router = useRouter()
 
-  // Se deve redirecionar, não renderizar nada
-  if (shouldRedirect) {
-    return null
-  }
-
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(null)
   const [loading, setLoading] = useState(true)
   const [editando, setEditando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
     nome_completo: "",
     email: "",
@@ -68,14 +64,20 @@ export default function PerfilPage() {
   })
 
   useEffect(() => {
+    setMounted(true)
     setIsClient(true)
   }, [])
 
   useEffect(() => {
-    if (usuario) {
+    if (mounted && !shouldRedirect && usuario) {
       carregarPerfil()
     }
-  }, [usuario])
+  }, [mounted, shouldRedirect, usuario])
+
+  // Se deve redirecionar ou não montado ainda, não renderizar nada
+  if (!mounted || shouldRedirect) {
+    return null
+  }
 
   const carregarPerfil = async () => {
     try {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -32,11 +32,6 @@ export default function AlterarSenhaPage() {
   const { shouldRedirect } = useAuthRedirect({ requireAuth: true })
   const router = useRouter()
 
-  // Se deve redirecionar, não renderizar nada
-  if (shouldRedirect) {
-    return null
-  }
-
   const [formData, setFormData] = useState({
     senha_atual: "",
     nova_senha: "",
@@ -48,6 +43,16 @@ export default function AlterarSenhaPage() {
     confirmar: false
   })
   const [salvando, setSalvando] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Se deve redirecionar ou não montado ainda, não renderizar nada
+  if (!mounted || shouldRedirect) {
+    return null
+  }
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({

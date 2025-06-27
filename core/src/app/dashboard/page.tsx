@@ -31,25 +31,33 @@ export default function DashboardPage() {
   // Verificar autenticação
   const { shouldRedirect } = useAuthRedirect({ requireAuth: true })
   const { usuario } = useAuth()
-
-  // Se deve redirecionar, não renderizar nada
-  if (shouldRedirect) {
-    return null
-  }
+  
   const [estatisticas, setEstatisticas] = useState<EstatisticasDashboard | null>(null)
   const [chamados, setChamados] = useState<Chamado[]>([])
   const [carregandoEstatisticas, setCarregandoEstatisticas] = useState(true)
   const [carregandoChamados, setCarregandoChamados] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    carregarEstatisticas()
+    setMounted(true)
   }, [])
 
   useEffect(() => {
-    if (usuario) {
+    if (mounted && !shouldRedirect) {
+      carregarEstatisticas()
+    }
+  }, [mounted, shouldRedirect])
+
+  useEffect(() => {
+    if (mounted && !shouldRedirect && usuario) {
       carregarChamados()
     }
-  }, [usuario])
+  }, [mounted, shouldRedirect, usuario])
+
+  // Se deve redirecionar ou não montado ainda, não renderizar nada
+  if (!mounted || shouldRedirect) {
+    return null
+  }
 
   const carregarEstatisticas = async () => {
     try {

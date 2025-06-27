@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -32,8 +33,14 @@ export default function ChamadoDetailPage({ params }: ChamadoDetailPageProps) {
   // Resolver params usando React.use()
   const resolvedParams = use(params)
   
-  // Se deve redirecionar, não renderizar nada
-  if (shouldRedirect) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  // Se deve redirecionar ou não montado ainda, não renderizar nada
+  if (!mounted || shouldRedirect) {
     return null
   }
   
