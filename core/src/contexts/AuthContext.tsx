@@ -94,7 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Redirecionar para login após logout
       if (typeof window !== 'undefined') {
-        window.location.href = '/login'
+        window.location.href = '/'
       }
     }
   }

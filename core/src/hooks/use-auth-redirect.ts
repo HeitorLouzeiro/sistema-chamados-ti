@@ -16,7 +16,7 @@ interface UseAuthRedirectOptions {
  */
 export function useAuthRedirect(options: UseAuthRedirectOptions = {}) {
   const {
-    redirectTo = '/login',
+    redirectTo = '/',
     requireAuth = true,
     showToast = true
   } = options

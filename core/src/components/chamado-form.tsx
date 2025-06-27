@@ -76,7 +76,7 @@ export function ChamadoForm() {
   }
 
   if (!usuario) {
-    router.push('/login')
+    router.push('/')
     return null
   }
 

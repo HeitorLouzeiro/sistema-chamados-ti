@@ -61,7 +61,7 @@ const forceLogout = (message: string = 'Sua sessão expirou.') => {
     resetRefreshState()
     
     // Redirecionar silenciosamente para o login
-    window.location.href = '/login'
+    window.location.href = '/'
   }
 }
 
