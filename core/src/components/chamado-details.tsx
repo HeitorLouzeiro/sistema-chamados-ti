@@ -83,10 +83,6 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       try {
         setLoading(true)
         const chamadoData = await chamadoService.obter(parseInt(chamadoId))
-        console.log('Dados do chamado carregados:', chamadoData) // Debug
-        console.log('Tipo serviço carregado:', chamadoData.tipo_servico) // Debug específico
-        console.log('Solicitante carregado:', chamadoData.solicitante) // Debug específico
-        console.log('Técnico responsável carregado:', chamadoData.tecnico_responsavel) // Debug específico
         setChamado(chamadoData)
         setObservacoes(chamadoData.observacoes_tecnico || "")
       } catch (error) {
@@ -128,14 +124,9 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
         toast.success(statusMessage, { id: toastId })
       }
 
-      console.log('Status atualizado, recarregando dados completos...')
-      
       // Recarregar os dados completos do chamado
       const chamadoCompleto = await chamadoService.obter(chamado.id)
-      console.log('Dados completos recarregados após atualizar status:', chamadoCompleto)
-      
       setChamado(chamadoCompleto)
-      console.log("Status do chamado atualizado com sucesso")
     } catch (error) {
       console.error('Erro ao atualizar status:', error)
       toast.error("Erro ao atualizar o status do chamado", { id: toastId })
@@ -155,17 +146,12 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
         observacoes_tecnico: observacoes
       })
       
-      console.log('Observações salvas, recarregando dados completos...')
-      
       // Depois, recarregar os dados completos do chamado
       const chamadoCompleto = await chamadoService.obter(chamado.id)
-      console.log('Dados completos recarregados:', chamadoCompleto)
-      
       setChamado(chamadoCompleto)
       setEditandoObservacoes(false)
       
       toast.success("Observações salvas com sucesso!", { id: toastId })
-      console.log("Observações salvas com sucesso")
     } catch (error) {
       console.error('Erro ao salvar observações:', error)
       toast.error("Erro ao salvar as observações", { id: toastId })
@@ -190,14 +176,6 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
 
   // Função para garantir integridade dos dados do chamado
   const preservarDadosCompletos = (dadosAtualizados: Chamado, dadosOriginais: Chamado) => {
-    console.log('=== PRESERVANDO DADOS ===')
-    console.log('Dados atualizados - tipo_servico:', dadosAtualizados.tipo_servico)
-    console.log('Dados originais - tipo_servico:', dadosOriginais.tipo_servico)
-    console.log('Dados atualizados - solicitante:', dadosAtualizados.solicitante)
-    console.log('Dados originais - solicitante:', dadosOriginais.solicitante)
-    console.log('Dados atualizados - tecnico_responsavel:', dadosAtualizados.tecnico_responsavel)
-    console.log('Dados originais - tecnico_responsavel:', dadosOriginais.tecnico_responsavel)
-    
     const resultado = {
       id: dadosAtualizados.id || dadosOriginais.id,
       numero: dadosAtualizados.numero || dadosOriginais.numero,
@@ -225,11 +203,6 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
       historico: dadosAtualizados.historico || dadosOriginais.historico
     }
     
-    console.log('Resultado final - tipo_servico:', resultado.tipo_servico)
-    console.log('Resultado final - solicitante:', resultado.solicitante)
-    console.log('Resultado final - tecnico_responsavel:', resultado.tecnico_responsavel)
-    console.log('=== FIM PRESERVAÇÃO ===')
-    
     return resultado
   }
 
@@ -242,12 +215,6 @@ export function ChamadoDetails({ chamadoId }: ChamadoDetailsProps) {
   // Verificar se o usuário atual é o técnico responsável (para outras funcionalidades)
   const isUsuarioTecnicoResponsavel = usuario && chamado?.tecnico_responsavel && 
     compararIds(chamado.tecnico_responsavel.id, usuario.id)
-  
-  // Debug logs
-  console.log('Debug - Usuario atual:', usuario)
-  console.log('Debug - Tecnico responsavel:', chamado?.tecnico_responsavel)
-  console.log('Debug - É técnico responsável?', isUsuarioTecnicoResponsavel)
-  console.log('Debug - Pode editar observações?', podeEditarObservacoes)
 
   if (loading) {
     return (

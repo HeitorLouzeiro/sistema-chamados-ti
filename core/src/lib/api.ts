@@ -267,9 +267,7 @@ export const authService = {
       await logoutApi.post('/usuarios/logout/')
     } catch (error: any) {
       // Se o erro for 401 (token expirado), não é problema crítico para logout
-      if (error.response?.status === 401) {
-        console.log('Token já expirado durante logout - isso é normal')
-      } else {
+      if (error.response?.status !== 401) {
         console.error('Erro no logout:', error)
       }
     } finally {
@@ -385,8 +383,6 @@ export const chamadoService = {
   },
 
   async uploadAnexo(chamadoId: number, arquivo: File): Promise<AnexoChamado> {
-    console.log('uploadAnexo chamado com:', { chamadoId, arquivo: arquivo.name })
-    
     if (!chamadoId || chamadoId === undefined || isNaN(chamadoId)) {
       console.error('ID do chamado inválido para upload:', chamadoId)
       throw new Error(`ID do chamado inválido: ${chamadoId}`)
@@ -396,7 +392,6 @@ export const chamadoService = {
     formData.append('arquivo', arquivo)
     
     const url = `/chamados/${chamadoId}/anexos/`
-    console.log('URL do upload:', url)
     
     const response = await api.post(url, formData, {
       headers: {
