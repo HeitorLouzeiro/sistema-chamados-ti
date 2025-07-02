@@ -1,0 +1,17 @@
+{
+  "name": "sistema-chamados-ti",
+  "scripts": {
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "docker:rebuild": "docker-compose build --no-cache",
+    "docker:migrate": "docker-compose exec backend python manage.py migrate",
+    "docker:superuser": "docker-compose exec backend python manage.py createsuperuser",
+    "docker:shell": "docker-compose exec backend python manage.py shell",
+    "docker:reset": "docker-compose down -v && docker-compose up -d",
+    "docker:logs:backend": "docker-compose logs -f backend",
+    "docker:logs:frontend": "docker-compose logs -f frontend",
+    "docker:logs:db": "docker-compose logs -f db"
+  }
+}
