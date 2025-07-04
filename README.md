@@ -115,22 +115,22 @@ O Sistema de Chamados TI é uma aplicação completa para gerenciamento de ticke
 <!-- USAGE EXAMPLES -->
 ## Demonstração
 
+### 🔐 Página de Login
+<img src=".github/assets/login.png" alt="Página de Login" width="600"/>
+
 ### 🏠 Dashboard Principal
-*Interface principal com estatísticas e chamados recentes*
+<img src=".github/assets/dashbord.png" alt="Página de Dashboard" width="600"/>
 
 ### 🎫 Criação de Chamados
-*Formulário intuitivo para abertura de novos tickets*
+<img src=".github/assets/novo-chamado.png" alt="Página de novos Chamados" width="600"/>
 
 ### 📋 Listagem de Chamados
-*Visualização completa com filtros e busca*
+<img src=".github/assets/listagem-chamados.png" alt="Listagem de Chamados" width="600"/>
 
-### 👥 Gerenciamento de Usuários
-*Painel administrativo para controle de acesso*
 
 ### 📊 Relatórios e Estatísticas
-*Dashboards com métricas de desempenho*
+<img src=".github/assets/relatorio.png" alt="Relatorio" width="600"/>
 
-> **Nota:** Screenshots serão adicionadas em breve
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
