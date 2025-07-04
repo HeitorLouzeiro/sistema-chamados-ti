@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DateRange } from "react-day-picker"
+import { format } from "date-fns"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
@@ -26,6 +28,7 @@ import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { useAuthRedirect } from "@/hooks/use-auth-redirect"
 import { chamadoService, type Chamado, type EstatisticasDashboard } from "@/lib/api"
+import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 
 export default function DashboardPage() {
   // Verificar autenticação
@@ -37,6 +40,8 @@ export default function DashboardPage() {
   const [carregandoEstatisticas, setCarregandoEstatisticas] = useState(true)
   const [carregandoChamados, setCarregandoChamados] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [pickerValue, setPickerValue] = useState<any>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -70,8 +75,14 @@ export default function DashboardPage() {
     }
   }
 
+  const aplicarFiltroData = () => {
+    carregarChamados()
+  }
+
   const carregarChamados = async () => {
     try {
+      setCarregandoChamados(true)
+      
       // Construir filtros baseados no tipo de usuário
       const filtros: Record<string, any> = {
         ordering: '-criado_em',
@@ -86,6 +97,17 @@ export default function DashboardPage() {
       }
       // Admin não precisa de filtros (vê todos os chamados)
 
+      // Aplicar filtro de data se selecionado
+      if (dateRange?.from) {
+        filtros.criado_em__gte = format(dateRange.from, 'yyyy-MM-dd')
+        console.log('Filtro data início:', format(dateRange.from, 'yyyy-MM-dd'))
+      }
+      if (dateRange?.to) {
+        filtros.criado_em__lte = format(dateRange.to, 'yyyy-MM-dd')
+        console.log('Filtro data fim:', format(dateRange.to, 'yyyy-MM-dd'))
+      }
+
+      console.log('Filtros aplicados:', filtros)
       const response = await chamadoService.listar(filtros)
       setChamados(response.results)
     } catch (error) {
@@ -207,23 +229,81 @@ export default function DashboardPage() {
           <div className="rounded-xl border bg-card text-card-foreground shadow">
             <div className="flex flex-col space-y-1.5 p-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                  {usuario?.tipo_usuario === 'usuario' 
-                    ? 'Meus Chamados Recentes' 
-                    : usuario?.tipo_usuario === 'tecnico'
-                    ? 'Chamados Disponíveis e Meus'
-                    : 'Chamados Recentes'
-                  }
-                </h3>
+                <div>
+                  <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                    {usuario?.tipo_usuario === 'usuario' 
+                      ? 'Meus Chamados Recentes' 
+                      : usuario?.tipo_usuario === 'tecnico'
+                      ? 'Chamados Disponíveis e Meus'
+                      : 'Chamados Recentes'
+                    }
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {usuario?.tipo_usuario === 'usuario' 
+                      ? 'Chamados que você criou'
+                      : usuario?.tipo_usuario === 'tecnico'
+                      ? 'Chamados abertos para assumir e seus chamados em andamento'
+                      : 'Últimos chamados cadastrados no sistema'
+                    }
+                  </p>
+                </div>
+                <div className="flex items-end gap-2">
+                  <DatePickerWithRange
+                    label="Filtrar por período"
+                    value={pickerValue}
+                    onChange={(value) => {
+                      console.log('DateRange valor:', value)
+                      setPickerValue(value)
+                      
+                      if (value && value.start && value.end) {
+                        // Converter CalendarDate para Date
+                        const startDate = new Date(value.start.year, value.start.month - 1, value.start.day)
+                        const endDate = new Date(value.end.year, value.end.month - 1, value.end.day)
+                        
+                        setDateRange({
+                          from: startDate,
+                          to: endDate
+                        })
+                        
+                        console.log('DateRange definido:', { from: startDate, to: endDate })
+                      } else if (value && value.start) {
+                        // Apenas data de início selecionada
+                        const startDate = new Date(value.start.year, value.start.month - 1, value.start.day)
+                        setDateRange({
+                          from: startDate,
+                          to: undefined
+                        })
+                      } else {
+                        setDateRange(undefined)
+                      }
+                    }}
+                  />
+                  {dateRange && (dateRange.from || dateRange.to) && (
+                    <Button
+                      variant="default"
+                      onClick={aplicarFiltroData}
+                      className="flex items-center gap-1 h-10"
+                    >
+                      Aplicar filtro
+                    </Button>
+                  )}
+                  {dateRange && (dateRange.from || dateRange.to) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setDateRange(undefined)
+                        setPickerValue(null)
+                        console.log('Filtro de data removido')
+                        // Recarregar chamados sem filtro
+                        setTimeout(() => carregarChamados(), 100)
+                      }}
+                      className="flex items-center gap-1 h-10"
+                    >
+                      Limpar filtro
+                    </Button>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {usuario?.tipo_usuario === 'usuario' 
-                  ? 'Chamados que você criou'
-                  : usuario?.tipo_usuario === 'tecnico'
-                  ? 'Chamados abertos para assumir e seus chamados em andamento'
-                  : 'Últimos chamados cadastrados no sistema'
-                }
-              </p>
             </div>
             <div className="p-6 pt-0">
               {carregandoChamados ? (
